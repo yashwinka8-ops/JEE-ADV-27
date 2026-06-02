@@ -157,6 +157,11 @@ interface StoreState {
   getTodayMinutes: () => number;
   getCurrentStreak: () => number;
   getLongestStreak: () => number;
+
+  // Firebase Sync
+  _hasHydrated: boolean;
+  setHasHydrated: (h: boolean) => void;
+  replaceStoreData: (data: Partial<StoreState>) => void;
 }
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -345,10 +350,18 @@ export const useStore = create<StoreState>()(
         }
         return longest;
       },
+
+      // ── Firebase Sync ─────────────────────
+      _hasHydrated: false,
+      setHasHydrated: (h) => set({ _hasHydrated: h }),
+      replaceStoreData: (data) => set({ ...data }),
     }),
     {
       name: 'jee-tracker-store',
       version: 8,
+      onRehydrateStorage: () => (state) => {
+        if (state) state.setHasHydrated(true);
+      },
     }
   )
 );

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import TopNav from '@/components/TopNav';
+import { AuthProvider } from '@/components/AuthProvider';
+import { SyncProvider } from '@/components/SyncProvider';
 
 export const metadata: Metadata = {
   title: 'JEE Advanced 2027 Tracker',
@@ -15,14 +17,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
       </head>
       <body>
-        <div className="layout">
-          <TopNav />
-          <main className="main-content">
-            <div className="main-container">
-              {children}
+        <AuthProvider>
+          <SyncProvider>
+            <div className="layout">
+              <TopNav />
+              <main className="main-content">
+                <div className="main-container">
+                  {children}
+                </div>
+              </main>
             </div>
-          </main>
-        </div>
+          </SyncProvider>
+        </AuthProvider>
       </body>
     </html>
   );
