@@ -80,7 +80,7 @@ export default function TopNav() {
                 title={item.label}
               >
                 <Icon className="nav-icon" />
-                <span>{item.label}</span>
+                <span className="hide-on-mobile">{item.label}</span>
               </Link>
             );
           })}

@@ -492,6 +492,7 @@ input, textarea, select { font-family: inherit; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.mock-layout { display: grid; grid-template-columns: minmax(300px, 1fr) 2fr; }
 
 /* ── Empty State ───────────────────────────────────────────── */
 .empty-state {
@@ -574,3 +575,82 @@ input, textarea, select { font-family: inherit; }
 .font-mono      { font-family: 'JetBrains Mono', monospace; }
 .font-bold      { font-weight: 700; }
 .truncate       { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Responsive Design (Mobile) ────────────────────────────── */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px 15px;
+    margin-top: 56px;
+  }
+  
+  .topnav {
+    height: 56px;
+  }
+
+  .topnav-inner {
+    padding: 0 15px;
+  }
+
+  .topnav-logo h1 {
+    font-size: 16px;
+  }
+
+  .topnav-links {
+    margin: 0 10px;
+  }
+
+  .topnav-link {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .topnav-link span.hide-on-mobile {
+    display: none;
+  }
+
+  .topnav-streak {
+    padding: 4px 8px;
+  }
+
+  .topnav-countdown .days {
+    font-size: 16px;
+  }
+
+  .topnav-countdown .label {
+    display: none;
+  }
+
+  .page-header {
+    margin-bottom: 24px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .grid-2, .grid-3, .grid-4, .mock-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .stat-tile {
+    padding: 20px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .card-section {
+    padding: 16px 20px;
+  }
+
+  .list-row {
+    padding: 12px 16px;
+  }
+  
+  .btn-lg {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
