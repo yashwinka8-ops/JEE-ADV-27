@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEE ZENITH 2026 | Rank Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        'primary': '#4f46e5',
+                        'secondary': '#8b5cf6',
+                        'accent': '#a78bfa',
+                        'green-rank': '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); }
+        .card {
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            color: #e5e7eb;
+            border-radius: 1rem;
+        }
+        .text-glass-light { color: #f3f4f6; }
+        .text-glass-muted { color: #d1d5db; }
+        .stat-card { transition: transform 0.2s, box-shadow 0.2s; cursor: default; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px -3px rgba(79, 70, 229, 0.4); }
+        input[type="text"], input[type="date"], input[type="number"] {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+        input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5); }
+        .mock-table th, .mock-table td { padding: 14px; }
+        .mock-table th { background-color: rgba(255, 255, 255, 0.1); }
+        .mock-table tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.05); }
+        .hidden-section { display: none !important; }
+
+        /* Heart beat animation on hover */
+        @keyframes heartbeat {
+            0%   { transform: scale(1); }
+            20%  { transform: scale(1.35); }
+            40%  { transform: scale(1); }
+            60%  { transform: scale(1.28); }
+            80%  { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+        .animate-heartbeat {
+            animation: heartbeat 1.3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
+            <div class="text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-2 tracking-tight">JEE ZENITH 2026</h1>
+                <p class="text-lg text-accent font-medium">Your Complete Mock Analysis Dashboard</p>
+            </div>
+            <div class="flex gap-4">
+                <button id="toggle-minimize" class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition">
+                    Minimize Dashboard
+                </button>
+                <button id="export-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform hover:scale-105">
+                    Export Report to PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-9 gap-5 mb-8">
+            <div class="stat-card p-5 rounded-xl text-center">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Total Tests</p>
+                <p id="total-tests" class="text-3xl font-bold text-primary">0</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Median Total</p>
+                <p id="median-total-score" class="text-3xl font-bold text-secondary">N/A</p>
+                <p class="text-base text-glass-light">/ 300</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Median %ile</p>
+                <p id="median-percentile" class="text-3xl font-bold text-accent">N/A</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center border-t-4 border-[#10b981]">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Physics Median</p>
+                <p id="median-physics" class="text-3xl font-bold text-[#10b981]">N/A</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center border-t-4 border-[#10b981]">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Physics Highest</p>
+                <p id="highest-physics" class="text-3xl font-bold text-[#10b981]">N/A</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center border-t-4 border-[#f59e0b]">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Chemistry Median</p>
+                <p id="median-chemistry" class="text-3xl font-bold text-[#f59e0b]">N/A</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center border-t-4 border-[#f59e0b]">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Chem Highest</p>
+                <p id="highest-chemistry" class="text-3xl font-bold text-[#f59e0b]">N/A</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center border-t-4 border-[#ef4444]">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Maths Median</p>
+                <p id="median-maths" class="text-3xl font-bold text-[#ef4444]">N/A</p>
+            </div>
+            <div class="stat-card p-5 rounded-xl text-center border-t-4 border-[#ef4444]">
+                <p class="text-xs font-medium text-glass-muted uppercase tracking-wider mb-1">Maths Highest</p>
+                <p id="highest-maths" class="text-3xl font-bold text-[#ef4444]">N/A</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Panel -->
+            <div class="space-y-6">
+                <div class="card p-6">
+                    <h2 class="text-2xl font-semibold text-glass-light mb-4 border-b border-white/20 pb-2">Add New Mock Result</h2>
+                    <form id="score-form" class="space-y-4">
+                        <input type="text" id="mockName" placeholder="Paper Name (e.g. 8 Apr S2)" required class="w-full">
+                        <input type="date" id="mockDate" required class="w-full">
+                        <div class="grid grid-cols-3 gap-3">
+                            <input type="number" id="physics" min="0" max="100" placeholder="Phy" required class="w-full text-center">
+                            <input type="number" id="chemistry" min="0" max="100" placeholder="Chem" required class="w-full text-center">
+                            <input type="number" id="maths" min="0" max="100" placeholder="Maths" required class="w-full text-center">
+                        </div>
+                        <input type="number" id="totalScore" readonly placeholder="Total (auto)" class="w-full text-center font-bold text-lg">
+                        <input type="number" step="0.01" id="predictedPercentile" placeholder="Percentile (e.g. 98.76)" required class="w-full text-center">
+                        <button type="submit" class="w-full bg-primary hover:bg-secondary text-white font-bold py-3 rounded-xl">Add Mock Result</button>
+                        <p id="form-success" class="text-green-400 text-center hidden">Added successfully!</p>
+                        <p id="form-error" class="text-red-400 text-center hidden"></p>
+                    </form>
+                </div>
+
+                <div class="card p-6">
+                    <h2 class="text-2xl font-semibold text-glass-light mb-4 border-b border-white/20 pb-2">Set Target Goals</h2>
+                    <form id="target-form" class="space-y-4">
+                        <input type="number" id="targetScoreInput" min="0" max="300" placeholder="Target Total Score" class="w-full text-center">
+                        <div class="grid grid-cols-3 gap-3">
+                            <input type="number" id="targetPhysicsInput" min="0" max="100" placeholder="P" class="w-full text-center">
+                            <input type="number" id="targetChemistryInput" min="0" max="100" placeholder="C" class="w-full text-center">
+                            <input type="number" id="targetMathsInput" min="0" max="100" placeholder="M" class="w-full text-center">
+                        </div>
+                        <input type="number" step="0.01" id="targetPercentileInput" placeholder="Target Percentile" class="w-full text-center">
+                        <button type="submit" class="w-full bg-secondary hover:bg-primary text-white font-bold py-3 rounded-xl">Save Goals</button>
+                        <p id="target-form-success" class="text-green-400 text-center hidden">Goals saved!</p>
+                    </form>
+                </div>
+
+                <div class="card p-6">
+                    <h2 class="text-2xl font-semibold text-glass-light mb-4 border-b border-white/20 pb-2">Rank Prediction (Based on 2025 Data)</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-accent">Recent Mock</h3>
+                            <p class="text-sm text-glass-muted">Percentile: <span id="recent-percentile" class="font-bold text-white">N/A</span>%</p>
+                            <p id="recent-predicted-rank-text" class="mt-2 p-3 bg-white/10 rounded-lg">Rank: N/A</p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-green-rank">Best Ever</h3>
+                            <p class="text-sm text-glass-muted">Percentile: <span id="best-percentile-rank-display" class="font-bold text-white">N/A</span>%</p>
+                            <p id="best-predicted-rank-text" class="mt-2 p-3 bg-green-rank/20 rounded-lg font-bold">Best Rank: N/A</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel + History -->
+            <div id="detailed-sections" class="lg:col-span-2 space-y-6">
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold text-glass-light mb-4">Total Score Progress</h2>
+                    <p class="text-sm text-glass-muted mb-3">
+                        Target → Total: <span id="current-target-score" class="text-red-400 font-bold">N/A</span> |
+                        P: <span id="current-target-physics" class="text-green-400 font-bold">N/A</span> |
+                        C: <span id="current-target-chemistry" class="text-yellow-400 font-bold">N/A</span> |
+                        M: <span id="current-target-maths" class="text-blue-400 font-bold">N/A</span>
+                    </p>
+                    <div class="h-80"><canvas id="scoreChart"></canvas></div>
+                </div>
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold text-glass-light mb-4">Percentile Trend (Target: <span id="current-target-percentile" class="text-red-400 font-bold">N/A</span>%)</h2>
+                    <div class="h-80"><canvas id="percentileChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-[#10b981] mb-3">Physics</h3>
+                        <div class="h-64"><canvas id="physicsChart"></canvas></div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-[#f59e0b] mb-3">Chemistry</h3>
+                        <div class="h-64"><canvas id="chemistryChart"></canvas></div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-[#ef4444] mb-3">Maths</h3>
+                        <div class="h-64"><canvas id="mathsChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="card p-6 mt-8">
+                    <h2 class="text-2xl font-semibold text-glass-light mb-4 border-b border-white/20 pb-2">Mock Test History</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full mock-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Paper</th>
+                                    <th>Date</th>
+                                    <th class="text-center">P</th>
+                                    <th class="text-center">C</th>
+                                    <th class="text-center">M</th>
+                                    <th class="text-center">Total</th>
+                                    <th class="text-center">Percentile</th>
+                                    <th class="text-center">Rank Range</th>
+                                    <th class="text-center">Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mock-history-body"></tbody>
+                        </table>
+                        <p id="no-data-message" class="text-center text-gray-400 py-8 hidden">No mocks added yet. Start tracking now!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer with heart + email hover -->
+        <div class="text-center text-glass-muted py-8 mt-12">
+            <div class="relative inline-block group mb-2">
+                <span class="text-3xl cursor-pointer transition-transform duration-300 group-hover:animate-heartbeat">
+                    ❤️
+                </span>
+                <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block bg-gray-800/90 text-white text-xs rounded-lg px-4 py-2 whitespace-nowrap shadow-lg">
+                    Made with love for JEE warriors
+                </span>
+            </div>
+
+            <p class="text-sm">
+                © 2026 💕 | 
+                <span class="relative group inline-block">
+                    <a href="mailto:yashwinka8@gmail.com" class="text-accent hover:text-white transition-colors duration-200">
+                        yashwinka8@gmail.com
+                    </a>
+                    <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block bg-gray-800/90 text-white text-xs rounded-lg px-4 py-2 whitespace-nowrap shadow-lg pointer-events-none">
+                        Contact developer for updates & suggestions
+                    </span>
+                </span>
+            </p>
+
+            <p class="text-xs mt-2 opacity-70">All rights reserved. Built for  JEE preparation.</p>
+        </div>
+    </div>
+
+    <script>
+        const MOCKS_KEY = 'JEE_MOCKS';
+        const TARGETS_KEY = 'JEE_TARGETS';
+
+        const anup2025Data = [
+            [100, 10], [99.99992043, 30], [99.9937403, 145], [99.99, 233], [99.9004, 1641], [99.8982, 1677],
+            [99.8016695, 3186], [99.7938333, 3290], [99.7018301, 4699], [99.6987428, 4731], [99.6007682, 6291],
+            [99.5966798, 6328], [99.5010703, 7753], [99.49677, 7824], [99.4004213, 9345], [99.3999618, 9358],
+            [99.3031387, 10816], [99.2, 10903], [99.1, 12536], [99, 15475], [98.9999641, 15509],
+            [98.5003488, 23079], [98.000774, 30646], [97.5087622, 38180], [97.0042358, 45729],
+            [96.55, 52689], [95.5040366, 68086], [95.0107132, 77530], [94.008, 93450], [93.1023262, 108160],
+            [92.5, 120000], [92, 130000], [91, 150000], [90, 170000], [89, 195000], [88, 220000],
+            [87, 250000], [86, 280000], [85, 310000]
+        ];
+
+        function getRankAnup2025(perc) {
+            if (perc >= 100) return ["1", "10"];
+            for (let i = 0; i < anup2025Data.length - 1; i++) {
+                const [p1, r1] = anup2025Data[i];
+                const [p2, r2] = anup2025Data[i + 1];
+                if (perc <= p1 && perc >= p2) {
+                    const rank = r1 + (r2 - r1) * (p1 - perc) / (p1 - p2);
+                    const dev = Math.max(100, rank * 0.04);
+                    return [Math.floor(rank - dev).toLocaleString('en-IN'), Math.ceil(rank + dev).toLocaleString('en-IN')];
+                }
+            }
+            return ["3,50,000+", "4,00,000+"];
+        }
+
+        let currentTargets = { score: 0, percentile: 0, physics: 0, chemistry: 0, maths: 0 };
+        let charts = {};
+        let isMinimized = false;
+
+        function calculateMedian(arr) {
+            if (arr.length === 0) return null;
+            const sorted = [...arr].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+        }
+
+        function loadMocks() {
+            const data = localStorage.getItem(MOCKS_KEY);
+            const mocks = data ? JSON.parse(data) : [];
+            mocks.forEach(m => m.date = new Date(m.date));
+            return mocks.sort((a, b) => a.date - b.date);
+        }
+
+        function saveMocks(mocks) {
+            localStorage.setItem(MOCKS_KEY, JSON.stringify(mocks));
+            updateAll();
+        }
+
+        function loadTargets() {
+            const data = localStorage.getItem(TARGETS_KEY);
+            return data ? JSON.parse(data) : { score: 0, percentile: 0, physics: 0, chemistry: 0, maths: 0 };
+        }
+
+        function saveTargets(t) {
+            localStorage.setItem(TARGETS_KEY, JSON.stringify(t));
+            currentTargets = t;
+            updateTargetsUI();
+            updateAll();
+        }
+
+        function updateTargetsUI() {
+            document.getElementById('current-target-score').textContent = currentTargets.score || 'N/A';
+            document.getElementById('current-target-percentile').textContent = currentTargets.percentile ? currentTargets.percentile.toFixed(2) : 'N/A';
+            document.getElementById('current-target-physics').textContent = currentTargets.physics || 'N/A';
+            document.getElementById('current-target-chemistry').textContent = currentTargets.chemistry || 'N/A';
+            document.getElementById('current-target-maths').textContent = currentTargets.maths || 'N/A';
+        }
+
+        function medianLinePlugin(value, color, label) {
+            return {
+                beforeDraw: chart => {
+                    if (value == null) return;
+                    const { ctx, chartArea, scales: { y } } = chart;
+                    const yPos = y.getPixelForValue(value);
+                    ctx.save();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(chartArea.left, yPos);
+                    ctx.lineTo(chartArea.right, yPos);
+                    ctx.stroke();
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 13px Inter';
+                    ctx.fillText(label, chartArea.left + 10, yPos - 10);
+                    ctx.restore();
+                }
+            };
+        }
+
+        function targetLinePlugin(value, color, label) {
+            return {
+                beforeDraw: chart => {
+                    if (!value) return;
+                    const { ctx, chartArea, scales: { y } } = chart;
+                    const yPos = y.getPixelForValue(value);
+                    ctx.save();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([8, 6]);
+                    ctx.beginPath();
+                    ctx.moveTo(chartArea.left, yPos);
+                    ctx.lineTo(chartArea.right, yPos);
+                    ctx.stroke();
+                    ctx.fillStyle = color;
+                    ctx.font = '12px Inter';
+                    ctx.fillText(label, chartArea.left + 8, yPos - 8);
+                    ctx.restore();
+                }
+            };
+        }
+
+        function renderCharts(mocks) {
+            if (isMinimized) return;
+            const labels = mocks.map(m => new Date(m.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+
+            Object.values(charts).forEach(c => c?.destroy());
+            charts = {};
+
+            const totalScores = mocks.map(m => m.totalScore);
+            const medianTotal = calculateMedian(totalScores);
+            const percentiles = mocks.map(m => m.predictedPercentile);
+            const medianPerc = calculateMedian(percentiles);
+
+            charts.score = new Chart(document.getElementById('scoreChart'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Total', data: totalScores, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.2)', fill: true, tension: 0.3 },
+                        { label: 'Physics', data: mocks.map(m => m.physics), borderColor: '#10b981', tension: 0.3 },
+                        { label: 'Chemistry', data: mocks.map(m => m.chemistry), borderColor: '#f59e0b', tension: 0.3 },
+                        { label: 'Maths', data: mocks.map(m => m.maths), borderColor: '#ef4444', tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 300 } } },
+                plugins: [
+                    medianLinePlugin(medianTotal, '#22d3ee', `Median: ${medianTotal == null ? 'N/A' : medianTotal.toFixed(1)}`),
+                    targetLinePlugin(currentTargets.score, '#f87171', `Target: ${currentTargets.score}`),
+                    targetLinePlugin(currentTargets.physics, '#4ade80', `P: ${currentTargets.physics}`),
+                    targetLinePlugin(currentTargets.chemistry, '#facc15', `C: ${currentTargets.chemistry}`),
+                    targetLinePlugin(currentTargets.maths, '#60a5fa', `M: ${currentTargets.maths}`)
+                ]
+            });
+
+            charts.percentile = new Chart(document.getElementById('percentileChart'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{ label: 'Percentile', data: percentiles, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.2)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 80, max: 100 } } },
+                plugins: [
+                    medianLinePlugin(medianPerc, '#22d3ee', `Median: ${medianPerc == null ? 'N/A' : medianPerc.toFixed(2)}%`),
+                    targetLinePlugin(currentTargets.percentile, '#f87171', `Target: ${currentTargets.percentile}%`)
+                ]
+            });
+
+            ['physics', 'chemistry', 'maths'].forEach((sub, i) => {
+                const color = ['#10b981', '#f59e0b', '#ef4444'][i];
+                const subScores = mocks.map(m => m[sub]);
+                const medianSub = calculateMedian(subScores);
+                charts[sub] = new Chart(document.getElementById(sub + 'Chart'), {
+                    type: 'line',
+                    data: { labels, datasets: [{ data: subScores, borderColor: color, backgroundColor: color + '33', fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100 } }, plugins: { legend: { display: false } } },
+                    plugins: [
+                        medianLinePlugin(medianSub, color, `Median: ${medianSub == null ? 'N/A' : medianSub.toFixed(1)}`),
+                        ...(currentTargets[sub] ? [targetLinePlugin(currentTargets[sub], color, `Target: ${currentTargets[sub]}`)] : [])
+                    ]
+                });
+            });
+        }
+
+        function updateAll() {
+            const mocks = loadMocks();
+            document.getElementById('total-tests').textContent = mocks.length;
+
+            const totalScores = mocks.map(m => m.totalScore);
+            document.getElementById('median-total-score').textContent = calculateMedian(totalScores)?.toFixed(1) ?? 'N/A';
+
+            const percentiles = mocks.map(m => m.predictedPercentile);
+            document.getElementById('median-percentile').textContent = calculateMedian(percentiles)?.toFixed(2) ?? 'N/A';
+
+            const physScores = mocks.map(m => m.physics);
+            const chemScores = mocks.map(m => m.chemistry);
+            const mathScores = mocks.map(m => m.maths);
+
+            document.getElementById('median-physics').textContent   = calculateMedian(physScores)?.toFixed(1) ?? 'N/A';
+            document.getElementById('median-chemistry').textContent = calculateMedian(chemScores)?.toFixed(1) ?? 'N/A';
+            document.getElementById('median-maths').textContent     = calculateMedian(mathScores)?.toFixed(1) ?? 'N/A';
+
+            document.getElementById('highest-physics').textContent   = physScores.length ? Math.max(...physScores) : 'N/A';
+            document.getElementById('highest-chemistry').textContent = chemScores.length ? Math.max(...chemScores) : 'N/A';
+            document.getElementById('highest-maths').textContent     = mathScores.length ? Math.max(...mathScores) : 'N/A';
+
+            const tbody = document.getElementById('mock-history-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (mocks.length === 0) {
+                    document.getElementById('no-data-message')?.classList.remove('hidden');
+                } else {
+                    document.getElementById('no-data-message')?.classList.add('hidden');
+                    [...mocks].reverse().forEach(m => {
+                        const [minR, maxR] = getRankAnup2025(m.predictedPercentile);
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${m.mockName}</td>
+                            <td>${new Date(m.date).toLocaleDateString('en-IN')}</td>
+                            <td class="text-center">${m.physics}</td>
+                            <td class="text-center">${m.chemistry}</td>
+                            <td class="text-center">${m.maths}</td>
+                            <td class="text-center font-bold text-primary">${m.totalScore}</td>
+                            <td class="text-center font-bold text-accent">${m.predictedPercentile.toFixed(2)}%</td>
+                            <td class="text-center font-medium text-yellow-300">${minR} – ${maxR}</td>
+                            <td class="text-center"><button onclick="deleteMock(${m.id})" class="text-red-400 hover:text-red-500">Delete</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+
+            if (mocks.length > 0) {
+                const recent = mocks[mocks.length - 1];
+                const [minR, maxR] = getRankAnup2025(recent.predictedPercentile);
+                document.getElementById('recent-percentile').textContent = recent.predictedPercentile.toFixed(2);
+                document.getElementById('recent-predicted-rank-text').textContent = `Rank: ${minR} – ${maxR}`;
+
+                const bestP = Math.max(...percentiles);
+                const [minB, maxB] = getRankAnup2025(bestP);
+                document.getElementById('best-percentile-rank-display').textContent = bestP.toFixed(2);
+                document.getElementById('best-predicted-rank-text').textContent = `Best Rank: ${minB} – ${maxB}`;
+            }
+
+            if (!document.getElementById('detailed-sections').classList.contains('hidden-section')) {
+                renderCharts(mocks);
+            }
+        }
+
+        window.deleteMock = function(id) {
+            if (confirm('Delete this mock permanently?')) {
+                let mocks = loadMocks();
+                mocks = mocks.filter(m => m.id !== id);
+                saveMocks(mocks);
+            }
+        };
+
+        document.getElementById('score-form').onsubmit = e => {
+            e.preventDefault();
+            const p = +document.getElementById('physics').value;
+            const c = +document.getElementById('chemistry').value;
+            const m = +document.getElementById('maths').value;
+            const total = p + c + m;
+            const perc = +document.getElementById('predictedPercentile').value;
+            if (total > 300 || perc > 100 || !document.getElementById('mockName').value.trim()) {
+                document.getElementById('form-error').textContent = 'Invalid input!';
+                document.getElementById('form-error').classList.remove('hidden');
+                return;
+            }
+            const mocks = loadMocks();
+            mocks.push({
+                id: Date.now(),
+                mockName: document.getElementById('mockName').value.trim(),
+                date: document.getElementById('mockDate').value,
+                physics: p, chemistry: c, maths: m,
+                totalScore: total,
+                predictedPercentile: perc
+            });
+            saveMocks(mocks);
+            document.getElementById('form-success').classList.remove('hidden');
+            setTimeout(() => document.getElementById('form-success').classList.add('hidden'), 3000);
+            e.target.reset();
+        };
+
+        ['physics', 'chemistry', 'maths'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                const sum = ['physics', 'chemistry', 'maths'].reduce((a, s) => a + (+document.getElementById(s).value || 0), 0);
+                document.getElementById('totalScore').value = sum;
+            });
+        });
+
+        document.getElementById('target-form').onsubmit = e => {
+            e.preventDefault();
+            saveTargets({
+                score: +document.getElementById('targetScoreInput').value || 0,
+                percentile: +document.getElementById('targetPercentileInput').value || 0,
+                physics: +document.getElementById('targetPhysicsInput').value || 0,
+                chemistry: +document.getElementById('targetChemistryInput').value || 0,
+                maths: +document.getElementById('targetMathsInput').value || 0
+            });
+            document.getElementById('target-form-success').classList.remove('hidden');
+            setTimeout(() => document.getElementById('target-form-success').classList.add('hidden'), 3000);
+        };
+
+        // Minimize / Maximize
+        const toggleBtn = document.getElementById('toggle-minimize');
+        const detailedSections = document.getElementById('detailed-sections');
+
+        if (toggleBtn && detailedSections) {
+            toggleBtn.addEventListener('click', () => {
+                isMinimized = !isMinimized;
+                if (isMinimized) {
+                    detailedSections.classList.add('hidden-section');
+                    toggleBtn.textContent = 'Show Full Dashboard';
+                    toggleBtn.classList.remove('bg-indigo-700', 'hover:bg-indigo-800');
+                    toggleBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                } else {
+                    detailedSections.classList.remove('hidden-section');
+                    toggleBtn.textContent = 'Minimize Dashboard';
+                    toggleBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                    toggleBtn.classList.add('bg-indigo-700', 'hover:bg-indigo-800');
+                    updateAll();
+                }
+            });
+        }
+
+        // PDF Export (with graphs)
+        document.getElementById('export-btn').addEventListener('click', async function () {
+            if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+                alert("jsPDF library not loaded.\nCheck internet connection or ad-blocker settings.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            doc.setFontSize(20);
+            doc.text('JEE ZENITH 2026 - Progress Report', pageWidth / 2, 15, { align: 'center' });
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageWidth / 2, 22, { align: 'center' });
+
+            let y = 30;
+            const mocks = loadMocks();
+
+            // Summary
+            doc.setFontSize(14);
+            doc.text('Performance Summary', 20, y);
+            y += 8;
+
+            doc.autoTable({
+                startY: y,
+                head: [['Metric', 'Value']],
+                body: [
+                    ['Tests Taken', mocks.length],
+                    ['Median Score', calculateMedian(mocks.map(m => m.totalScore))?.toFixed(1) ?? 'N/A'],
+                    ['Median Percentile', calculateMedian(mocks.map(m => m.predictedPercentile))?.toFixed(2) ?? 'N/A']
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] },
+                margin: { left: 20, right: 20 }
+            });
+            y = doc.lastAutoTable.finalY + 15;
+
+            // Targets
+            doc.setFontSize(14);
+            doc.text('Target Goals', 20, y);
+            y += 8;
+
+            doc.autoTable({
+                startY: y,
+                head: [['Goal', 'Target']],
+                body: [
+                    ['Total Score', currentTargets.score || 'Not Set'],
+                    ['Percentile', currentTargets.percentile ? currentTargets.percentile.toFixed(2) + '%' : 'Not Set'],
+                    ['Physics', currentTargets.physics || 'Not Set'],
+                    ['Chemistry', currentTargets.chemistry || 'Not Set'],
+                    ['Maths', currentTargets.maths || 'Not Set']
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: [139, 92, 246] },
+                margin: { left: 20, right: 20 }
+            });
+            y = doc.lastAutoTable.finalY + 15;
+
+            // Graphs (only if they exist and are rendered)
+            if (charts.score && charts.percentile) {
+                try {
+                    doc.setFontSize(14);
+                    doc.text('Total Score Progress', 20, y);
+                    y += 6;
+                    doc.addImage(charts.score.toBase64Image(), 'PNG', 20, y, 170, 85);
+                    y += 90;
+
+                    if (y > pageHeight - 110) { doc.addPage(); y = 20; }
+
+                    doc.text('Percentile Trend', 20, y);
+                    y += 6;
+                    doc.addImage(charts.percentile.toBase64Image(), 'PNG', 20, y, 170, 85);
+                    y += 95;
+
+                    if (y > pageHeight - 140) { doc.addPage(); y = 20; }
+
+                    doc.text('Subject-wise Performance', 20, y);
+                    y += 8;
+
+                    ['physics', 'chemistry', 'maths'].forEach((sub, i) => {
+                        if (charts[sub]) {
+                            doc.addImage(charts[sub].toBase64Image(), 'PNG', 20 + (i * 60), y, 55, 45);
+                        }
+                    });
+                    y += 55;
+                } catch (err) {
+                    console.error("Graph export failed:", err);
+                    doc.text("(Graphs could not be included)", 20, y);
+                    y += 10;
+                }
+            }
+
+            // History
+            if (mocks.length > 0) {
+                doc.setFontSize(14);
+                doc.text('Mock Test History', 20, y);
+                y += 8;
+
+                const historyBody = mocks.slice().reverse().map(m => {
+                    const [minR, maxR] = getRankAnup2025(m.predictedPercentile);
+                    return [
+                        m.mockName,
+                        new Date(m.date).toLocaleDateString('en-IN'),
+                        m.physics,
+                        m.chemistry,
+                        m.maths,
+                        m.totalScore,
+                        m.predictedPercentile.toFixed(2) + '%',
+                        `${minR} – ${maxR}`
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: y,
+                    head: [['Paper', 'Date', 'P', 'C', 'M', 'Total', '%ile', 'Rank Range']],
+                    body: historyBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: [79, 70, 229] },
+                    styles: { fontSize: 9 },
+                    margin: { left: 20, right: 20 }
+                });
+            } else {
+                doc.setFontSize(12);
+                doc.text('No mock tests recorded yet.', 20, y);
+            }
+
+            doc.save(`JEE_ZENITH_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
+
+        window.onload = () => {
+            currentTargets = loadTargets();
+            updateTargetsUI();
+            updateAll();
+        };
+    </script>
+</body>
+</html>

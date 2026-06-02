@@ -1,0 +1,576 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  /* Backgrounds — iOS true-black layered system */
+  --bg-primary:       #000000;
+  --bg-secondary:     #1c1c1e;
+  --bg-tertiary:      #2c2c2e;
+  --bg-quaternary:    #3a3a3c;
+  --bg-fill:          rgba(255,255,255,0.05);
+  --bg-fill-hover:    rgba(255,255,255,0.09);
+
+  /* Labels — 4-level iOS opacity scale */
+  --label-primary:    #ffffff;
+  --label-secondary:  rgba(255,255,255,0.60);
+  --label-tertiary:   rgba(255,255,255,0.30);
+  --label-quaternary: rgba(255,255,255,0.14);
+
+  /* Separators */
+  --separator:        rgba(255,255,255,0.12);
+  --separator-opaque: #38383a;
+
+  /* System colors — iOS palette */
+  --blue:   #0a84ff;
+  --green:  #30d158;
+  --amber:  #ff9f0a;
+  --red:    #ff453a;
+  --cyan:   #64d2ff;
+  --indigo: #5e5ce6;
+
+  /* Semantic */
+  --accent:     var(--blue);
+  --physics:    var(--blue);
+  --chemistry:  var(--green);
+  --maths:      var(--amber);
+  --danger:     var(--red);
+  --success:    var(--green);
+  --warning:    var(--amber);
+
+  /* Tinted backgrounds */
+  --blue-fill:    rgba(10,132,255,0.14);
+  --green-fill:   rgba(48,209,88,0.14);
+  --amber-fill:   rgba(255,159,10,0.14);
+  --red-fill:     rgba(255,69,58,0.14);
+  --cyan-fill:    rgba(100,210,255,0.14);
+
+  /* Shape */
+  --radius-xs:  6px;
+  --radius-sm:  10px;
+  --radius-md:  14px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --radius-full: 999px;
+
+  /* Layout */
+  --sidebar-w:  220px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --fast: 0.15s;
+  --med:  0.25s;
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--label-primary);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* ── App Shell ─────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px 30px;
+  min-height: calc(100vh - 64px); /* assuming 64px topnav */
+  margin-top: 64px;
+}
+
+.main-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Top Navigation ────────────────────────────────────────── */
+.topnav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--separator);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+}
+
+.topnav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 30px;
+}
+
+.topnav-logo h1 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--label-primary);
+  letter-spacing: -0.5px;
+}
+
+.topnav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.topnav-links::-webkit-scrollbar { display: none; }
+
+.topnav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--label-secondary);
+  transition: all var(--fast) var(--ease);
+  white-space: nowrap;
+}
+
+.topnav-link:hover {
+  background: var(--bg-fill);
+  color: var(--label-primary);
+}
+
+.topnav-link.active {
+  background: var(--blue-fill);
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.topnav-link .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+.topnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topnav-streak {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,159,10,0.12);
+  border-radius: var(--radius-full);
+}
+
+.topnav-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.topnav-countdown .days {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--label-primary);
+  letter-spacing: -0.5px;
+}
+
+.topnav-countdown .label {
+  font-size: 11px;
+  color: var(--label-tertiary);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ── Page Header ───────────────────────────────────────────── */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--label-primary);
+}
+
+.page-header p {
+  font-size: 14px;
+  color: var(--label-secondary);
+  margin-top: 4px;
+}
+
+/* ── iOS Sheet Card ────────────────────────────────────────── */
+.card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.card-inset {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.card-section {
+  padding: 24px 26px;
+}
+
+/* Grouped list row — iOS settings style */
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  background: var(--bg-secondary);
+  transition: background var(--fast) var(--ease);
+  cursor: pointer;
+}
+
+.list-row:hover { background: var(--bg-tertiary); }
+.list-row + .list-row { border-top: 1px solid var(--separator); }
+
+.list-row-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.list-row-body { flex: 1; min-width: 0; }
+.list-row-title { font-size: 15px; font-weight: 500; }
+.list-row-sub { font-size: 12px; color: var(--label-tertiary); margin-top: 1px; }
+.list-row-trail { font-size: 13px; color: var(--label-tertiary); flex-shrink: 0; }
+
+/* ── Stat Tiles ────────────────────────────────────────────── */
+.stat-tile {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--label-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  color: var(--label-primary);
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--label-tertiary);
+  margin-top: 5px;
+}
+
+/* ── Progress Bar ──────────────────────────────────────────── */
+.progress-track {
+  background: var(--bg-tertiary);
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s var(--ease);
+}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity var(--fast) var(--ease), background var(--fast) var(--ease), transform var(--fast) var(--ease);
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+}
+.btn-primary:hover { opacity: 0.88; }
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--label-secondary);
+}
+.btn-secondary:hover { background: var(--bg-quaternary); color: var(--label-primary); }
+
+.btn-danger {
+  background: var(--red-fill);
+  color: var(--red);
+}
+.btn-danger:hover { opacity: 0.8; }
+
+.btn-success {
+  background: var(--green-fill);
+  color: var(--green);
+}
+
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-lg { padding: 12px 26px; font-size: 15px; font-weight: 700; }
+.btn-icon { padding: 8px; border-radius: var(--radius-sm); }
+
+/* ── Inputs ────────────────────────────────────────────────── */
+.input, .select, .textarea {
+  background: var(--bg-tertiary);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--label-primary);
+  font-size: 15px;
+  padding: 10px 14px;
+  transition: border-color var(--fast) var(--ease);
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--blue);
+}
+
+.input::placeholder { color: var(--label-tertiary); }
+.textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.select { cursor: pointer; }
+
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--label-secondary); }
+
+/* ── Segment Control (like iOS) ────────────────────────────── */
+.segment-control {
+  display: inline-flex;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.segment-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--label-secondary);
+  background: transparent;
+  transition: all var(--fast) var(--ease);
+  cursor: pointer;
+}
+
+.segment-btn.active {
+  background: var(--bg-secondary);
+  color: var(--label-primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.segment-btn:not(.active):hover { color: var(--label-primary); }
+
+/* ── Pills / Chips ─────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+  background: var(--bg-tertiary);
+  color: var(--label-secondary);
+  border: none;
+}
+
+.pill:hover { color: var(--label-primary); background: var(--bg-quaternary); }
+.pill.active { background: var(--blue-fill); color: var(--blue); }
+.pill.active-green { background: var(--green-fill); color: var(--green); }
+.pill.active-amber { background: var(--amber-fill); color: var(--amber); }
+.pill.active-red   { background: var(--red-fill); color: var(--red); }
+
+/* Subject pills */
+.pill-physics   { background: var(--blue-fill); color: var(--blue); }
+.pill-chemistry { background: var(--green-fill); color: var(--green); }
+.pill-maths     { background: var(--amber-fill); color: var(--amber); }
+
+/* ── Tags / Badges ─────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tag-blue   { background: var(--blue-fill); color: var(--blue); }
+.tag-green  { background: var(--green-fill); color: var(--green); }
+.tag-amber  { background: var(--amber-fill); color: var(--amber); }
+.tag-red    { background: var(--red-fill); color: var(--red); }
+.tag-muted  { background: rgba(255,255,255,0.08); color: var(--label-secondary); }
+
+/* ── Modal / Sheet ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s var(--ease);
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  width: 100%;
+  max-width: 500px;
+  animation: slideUp 0.25s var(--ease);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.modal-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+
+/* ── Grid Layouts ──────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+
+/* ── Empty State ───────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 20px;
+  text-align: center;
+  gap: 10px;
+  color: var(--label-tertiary);
+}
+
+.empty-state h3 { font-size: 16px; font-weight: 600; color: var(--label-secondary); }
+.empty-state p  { font-size: 13px; max-width: 280px; line-height: 1.5; }
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fadeIn 0.3s var(--ease); }
+.fade-in-up { animation: fadeInUp 0.3s var(--ease); }
+
+.stagger > * { opacity: 0; animation: fadeInUp 0.3s var(--ease) forwards; }
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger > *:nth-child(6) { animation-delay: 0.24s; }
+
+/* ── Divider ───────────────────────────────────────────────── */
+.divider { height: 1px; background: var(--separator); margin: 4px 0; }
+
+/* ── Mastery Colors ────────────────────────────────────────── */
+.mastery-not-started { color: var(--label-tertiary); }
+.mastery-learning    { color: var(--red); }
+.mastery-practiced   { color: var(--amber); }
+.mastery-mastered    { color: var(--green); }
+
+/* ── Recharts overrides ────────────────────────────────────── */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line { stroke: var(--separator) !important; }
+.recharts-tooltip-wrapper { outline: none; }
+
+/* ── Utility ───────────────────────────────────────────────── */
+.flex           { display: flex; }
+.flex-col       { flex-direction: column; }
+.items-center   { align-items: center; }
+.justify-between{ justify-content: space-between; }
+.gap-1          { gap: 4px; }
+.gap-2          { gap: 8px; }
+.gap-3          { gap: 12px; }
+.gap-4          { gap: 16px; }
+.mb-2           { margin-bottom: 8px; }
+.mb-3           { margin-bottom: 12px; }
+.mb-4           { margin-bottom: 16px; }
+.mb-6           { margin-bottom: 24px; }
+.mb-8           { margin-bottom: 32px; }
+.mt-1           { margin-top: 4px; }
+.mt-2           { margin-top: 8px; }
+.mt-4           { margin-top: 16px; }
+.w-full         { width: 100%; }
+.text-sm        { font-size: 13px; }
+.text-xs        { font-size: 11px; }
+.text-secondary { color: var(--label-secondary); }
+.text-tertiary  { color: var(--label-tertiary); }
+.font-mono      { font-family: 'JetBrains Mono', monospace; }
+.font-bold      { font-weight: 700; }
+.truncate       { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

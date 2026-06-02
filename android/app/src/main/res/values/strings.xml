@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">JEE Tracker</string>
+    <string name="title_activity_main">JEE Tracker</string>
+    <string name="package_name">com.jeetracker.app</string>
+    <string name="custom_url_scheme">com.jeetracker.app</string>
+</resources>
