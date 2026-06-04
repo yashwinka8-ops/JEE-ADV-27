@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { auth, googleProvider, signInWithPopup, firebaseSignOut } from '@/lib/firebase';
+import { GoogleAuthProvider } from 'firebase/auth';
+import { fetchGooglePhotos, getDriveFolder, createDriveFolder, syncFileToDrive } from '@/lib/googleApi';
 import { 
   CloudSun, Focus, Target, CheckCircle2, Circle, 
   Quote, MapPin, Wind, Sparkles, Cloud, Image as ImageIcon
@@ -39,9 +41,8 @@ const GITA_SHLOKAS = [
 ];
 
 export default function PersonalDashboard() {
-  const { data: session } = useSession();
   const store = useStore();
-  const { todayFocus, setTodayFocus, lifeHabits, toggleHabit, lifeGoals, customMemories, addCustomMemory, removeCustomMemory } = store;
+  const { todayFocus, setTodayFocus, lifeHabits, toggleHabit, lifeGoals, customMemories, addCustomMemory, removeCustomMemory, firebaseUser, googleAccessToken, setGoogleAccessToken } = store;
   const [mounted, setMounted] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [quickNote, setQuickNote] = useState('');
@@ -51,12 +52,11 @@ export default function PersonalDashboard() {
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   
   useEffect(() => {
-    if (session) {
+    if (firebaseUser && googleAccessToken) {
       setLoadingPhotos(true);
-      fetch('/api/google/photos')
-        .then(res => res.json())
-        .then(data => {
-          if (data.mediaItems) setPhotos(data.mediaItems.filter((i: any) => i.mimeType?.startsWith('image/')));
+      fetchGooglePhotos(googleAccessToken)
+        .then(mediaItems => {
+          if (mediaItems) setPhotos(mediaItems.filter((i: any) => i.mimeType?.startsWith('image/')));
           setLoadingPhotos(false);
         })
         .catch(err => {
@@ -64,7 +64,7 @@ export default function PersonalDashboard() {
           setLoadingPhotos(false);
         });
     }
-  }, [session]);
+  }, [firebaseUser, googleAccessToken]);
   
   useEffect(() => {
     setMounted(true);
@@ -133,32 +133,50 @@ export default function PersonalDashboard() {
   };
 
   const handleSync = async () => {
-    if (!session) return alert('Connect Google first!');
+    if (!firebaseUser || !googleAccessToken) return alert('Connect Google first!');
     setSyncing(true);
     try {
-      const res = await fetch('/api/google/drive/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          journals: store.journalEntries,
-          dreams: store.dreamCards,
-          goals: store.lifeGoals,
-          brainNotes: store.brainNotes,
-          relationships: store.relationships
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Successfully synced ${data.count} items to Google Drive folders!`);
-      } else {
-        const errData = await res.json();
-        alert('Sync failed: ' + errData.error);
+      let folderId = await getDriveFolder(googleAccessToken);
+      if (!folderId) {
+        folderId = await createDriveFolder(googleAccessToken);
       }
-    } catch (e) {
-      alert('Error syncing to Drive.');
+      if (!folderId) throw new Error('Could not create or find Life OS folder');
+
+      // Sync all items as individual files for now (or a single JSON dump)
+      const dataDump = JSON.stringify({
+        journals: store.journalEntries,
+        dreams: store.dreamCards,
+        goals: store.lifeGoals,
+        brainNotes: store.brainNotes,
+        relationships: store.relationships
+      }, null, 2);
+
+      await syncFileToDrive(googleAccessToken, 'LifeOS_Backup.json', dataDump, folderId);
+      
+      alert('Successfully synced backup to Google Drive!');
+    } catch (e: any) {
+      alert('Error syncing to Drive: ' + e.message);
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleConnectGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        setGoogleAccessToken(credential.accessToken);
+      }
+    } catch (error) {
+      console.error('Login Failed', error);
+      alert('Failed to connect to Google');
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    await firebaseSignOut(auth);
+    setGoogleAccessToken(null);
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,15 +240,15 @@ export default function PersonalDashboard() {
         </div>
         <div className="mobile-header-actions" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           {/* Google Connect Button */}
-          {session ? (
+          {firebaseUser ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: syncing ? 'wait' : 'pointer', boxShadow: '0 4px 14px rgba(16,185,129,0.3)', opacity: syncing ? 0.7 : 1 }}>
                 <CloudSun size={16} /> {syncing ? 'Syncing...' : 'Sync to Drive'}
               </button>
-              <button onClick={() => signOut()} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', padding: '10px 16px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', transition: 'background 0.2s' }}>
-                {session.user?.image ? <img src={session.user.image} alt="Profile" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <Cloud size={18} color="#60a5fa" />}
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>{session.user?.name}</div>
+              <button onClick={handleDisconnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }}>
+                {firebaseUser.photoURL ? <img src={firebaseUser.photoURL} alt="Profile" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <Cloud size={18} color="#60a5fa" />}
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>{firebaseUser.displayName || firebaseUser.email}</div>
                   <div style={{ fontSize: 10, color: '#94a3b8' }}>Connected</div>
                 </div>
               </button>

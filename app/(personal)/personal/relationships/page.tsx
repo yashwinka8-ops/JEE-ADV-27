@@ -436,7 +436,7 @@ export default function RelationshipsPage() {
             {/* Google Drive Uploads */}
             {activeSection === 'drive' && (
               <div>
-                {!session ? (
+                {!firebaseUser ? (
                   <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 16, padding: 24, textAlign: 'center' }}>
                     <Cloud size={32} color="#3b82f6" style={{ margin: '0 auto 12px' }} />
                     <div style={{ color: '#fff', fontWeight: 600, marginBottom: 8 }}>Google Drive Disconnected</div>
