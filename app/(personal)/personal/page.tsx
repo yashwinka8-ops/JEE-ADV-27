@@ -253,23 +253,23 @@ export default function PersonalDashboard() {
           <p style={{ color: '#94a3b8', fontSize: 16, fontWeight: 500 }}>Ready to conquer the day?</p>
         </div>
         <div className="mobile-header-actions" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          {/* Google Connect Button */}
-          {firebaseUser ? (
+          {/* Google Drive Connect / Sync */}
+          {googleAccessToken ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: syncing ? 'wait' : 'pointer', boxShadow: '0 4px 14px rgba(16,185,129,0.3)', opacity: syncing ? 0.7 : 1 }}>
                 <CloudSun size={16} /> {syncing ? 'Syncing...' : 'Sync to Drive'}
               </button>
-              <button onClick={handleDisconnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }}>
-                {firebaseUser.photoURL ? <img src={firebaseUser.photoURL} alt="Profile" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <Cloud size={18} color="#60a5fa" />}
+              <button onClick={handleDisconnectGoogle} title="Disconnect Google Drive" style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }}>
+                {firebaseUser?.photoURL ? <img src={firebaseUser.photoURL} alt="Profile" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <Cloud size={18} color="#10b981" />}
                 <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                  <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>{firebaseUser.displayName || firebaseUser.email}</div>
-                  <div style={{ fontSize: 10, color: '#94a3b8' }}>Connected</div>
+                  <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>{firebaseUser?.displayName || firebaseUser?.email}</div>
+                  <div style={{ fontSize: 10, color: '#10b981' }}>Drive Connected ✓</div>
                 </div>
               </button>
             </div>
           ) : (
             <button onClick={handleConnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3b82f6', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.4)', transition: 'transform 0.2s' }}>
-              <Cloud size={16} /> Connect Google
+              <Cloud size={16} /> Connect Google Drive
             </button>
           )}
           <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.02)', padding: '12px 24px', borderRadius: 24, border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
