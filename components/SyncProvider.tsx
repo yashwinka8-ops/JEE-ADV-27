@@ -45,10 +45,18 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     const docRef = doc(db, 'users', user.uid);
     const state = useStore.getState();
     
-    // Strip functions before saving to Firestore
+    // Fields that must NEVER be saved to Firestore
+    // firebaseUser is a class instance, googleAccessToken is a session secret
+    const BLOCKLIST = new Set([
+      'firebaseUser',
+      'googleAccessToken',
+      '_hasHydrated',
+    ]);
+    
+    // Strip functions and blocked fields before saving
     const dataToSave: any = { ...state };
     Object.keys(dataToSave).forEach((key) => {
-      if (typeof dataToSave[key] === 'function') {
+      if (typeof dataToSave[key] === 'function' || BLOCKLIST.has(key)) {
         delete dataToSave[key];
       }
     });
