@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
-import { auth, googleProvider, signInWithPopup, firebaseSignOut } from '@/lib/firebase';
-import { GoogleAuthProvider } from 'firebase/auth';
+import { auth, googleProvider, firebaseSignOut } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup, linkWithPopup, reauthenticateWithPopup } from 'firebase/auth';
 import { fetchGooglePhotos, getDriveFolder, createDriveFolder, syncFileToDrive } from '@/lib/googleApi';
 import { 
   CloudSun, Focus, Target, CheckCircle2, Circle, 
@@ -162,20 +162,34 @@ export default function PersonalDashboard() {
   };
 
   const handleConnectGoogle = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return alert('Please sign in first.');
+
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      // Try to link the Google account to the current user
+      const result = await linkWithPopup(currentUser, googleProvider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        setGoogleAccessToken(credential.accessToken);
+      if (credential?.accessToken) setGoogleAccessToken(credential.accessToken);
+    } catch (linkError: any) {
+      if (linkError.code === 'auth/credential-already-in-use' || linkError.code === 'auth/provider-already-linked') {
+        // Already linked — just reauthenticate to get a fresh access token
+        try {
+          const result = await reauthenticateWithPopup(currentUser, googleProvider);
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          if (credential?.accessToken) setGoogleAccessToken(credential.accessToken);
+        } catch (reAuthError) {
+          console.error('Reauth failed', reAuthError);
+          alert('Failed to connect Google Drive.');
+        }
+      } else {
+        console.error('Link failed', linkError);
+        alert('Failed to connect Google: ' + linkError.message);
       }
-    } catch (error) {
-      console.error('Login Failed', error);
-      alert('Failed to connect to Google');
     }
   };
 
-  const handleDisconnectGoogle = async () => {
-    await firebaseSignOut(auth);
+  const handleDisconnectGoogle = () => {
+    // Only clear the Drive token — do NOT sign out the user
     setGoogleAccessToken(null);
   };
 
