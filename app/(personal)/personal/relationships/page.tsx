@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import type { Relationship, RelationshipMemory, RelationshipConvoLog } from '@/store/useStore';
 import AppleEmoji from '@/components/AppleEmoji';
+import { getDriveFolder, createDriveFolder, uploadFileToDrive } from '@/lib/googleApi';
 
 import { Plus, X, Trash2, Phone, AtSign, MapPin, Gift, Calendar, Clock, ChevronRight, MessageSquare, Heart, Cloud, UploadCloud, File as FileIcon, Edit2, Image as ImageIcon } from 'lucide-react';
 
@@ -39,7 +40,7 @@ const Textarea = ({ label, value, onChange, placeholder = '', rows = 3 }: any) =
 );
 
 export default function RelationshipsPage() {
-  const { relationships, addRelationship, updateRelationship, removeRelationship, firebaseUser } = useStore();
+  const { relationships, addRelationship, updateRelationship, removeRelationship, firebaseUser, googleAccessToken } = useStore();
   const [selected, setSelected] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyRel());
@@ -81,30 +82,26 @@ export default function RelationshipsPage() {
     const file = e.target.files?.[0];
     if (!file || !person) return;
 
+    if (!googleAccessToken) {
+      alert('Please connect Google Drive first from the Personal Dashboard.');
+      return;
+    }
+
     setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('relationshipId', person.id);
-    formData.append('relationshipName', person.name);
-
     try {
-      const res = await fetch('/api/google/drive/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      // Get or create the Life OS folder
+      let folderId = await getDriveFolder(googleAccessToken);
+      if (!folderId) folderId = await createDriveFolder(googleAccessToken);
+      if (!folderId) throw new Error('Could not create Google Drive folder');
 
-      if (res.ok) {
-        const data = await res.json();
-        const driveFiles = person.driveFiles || [];
-        updateRelationship(person.id, {
-          driveFiles: [{ id: data.id, name: data.name, url: data.url, mimeType: data.mimeType, date: new Date().toISOString() }, ...driveFiles]
-        });
-      } else {
-        alert('Upload failed. Did you approve Google Drive permissions?');
-      }
-    } catch (err) {
+      const data = await uploadFileToDrive(googleAccessToken, file, folderId);
+      const driveFiles = person.driveFiles || [];
+      updateRelationship(person.id, {
+        driveFiles: [{ id: data.id, name: data.name, url: data.webViewLink, mimeType: data.mimeType, date: new Date().toISOString() }, ...driveFiles]
+      });
+    } catch (err: any) {
       console.error(err);
-      alert('Upload failed.');
+      alert('Upload failed: ' + err.message);
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -112,10 +109,13 @@ export default function RelationshipsPage() {
   };
 
   const deleteDriveFile = async (fileId: string) => {
-    if (!person || !confirm('Delete this file from Google Drive?')) return;
+    if (!person || !googleAccessToken || !confirm('Delete this file from Google Drive?')) return;
     try {
-      const res = await fetch(`/api/google/drive/file?id=${fileId}`, { method: 'DELETE' });
-      if (res.ok) {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${googleAccessToken}` },
+      });
+      if (res.ok || res.status === 204) {
         const newFiles = (person.driveFiles || []).filter(f => f.id !== fileId);
         updateRelationship(person.id, { driveFiles: newFiles });
       } else {
@@ -127,14 +127,17 @@ export default function RelationshipsPage() {
   };
 
   const renameDriveFile = async (fileId: string, oldName: string) => {
-    if (!person) return;
+    if (!person || !googleAccessToken) return;
     const newName = prompt('Enter new file name:', oldName);
     if (!newName || newName === oldName) return;
     try {
-      const res = await fetch('/api/google/drive/file', {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: fileId, name: newName })
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName }),
       });
       if (res.ok) {
         const newFiles = (person.driveFiles || []).map(f => f.id === fileId ? { ...f, name: newName } : f);
