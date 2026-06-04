@@ -254,7 +254,7 @@ export default function PersonalDashboard() {
               </button>
             </div>
           ) : (
-            <button onClick={() => signIn('google')} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3b82f6', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.4)', transition: 'transform 0.2s' }}>
+            <button onClick={handleConnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3b82f6', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.4)', transition: 'transform 0.2s' }}>
               <Cloud size={16} /> Connect Google
             </button>
           )}
