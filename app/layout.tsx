@@ -1,8 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import TopNav from '@/components/TopNav';
+import Providers from '@/components/Providers';
+
 import { AuthProvider } from '@/components/AuthProvider';
 import { SyncProvider } from '@/components/SyncProvider';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'JEE Advanced 2027 Tracker',
@@ -10,25 +14,27 @@ export const metadata: Metadata = {
   keywords: ['JEE Advanced', 'JEE Tracker', 'Study Planner', 'JEE 2027'],
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
       <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
       </head>
-      <body>
-        <AuthProvider>
-          <SyncProvider>
-            <div className="layout">
-              <TopNav />
-              <main className="main-content">
-                <div className="main-container">
-                  {children}
-                </div>
-              </main>
-            </div>
-          </SyncProvider>
-        </AuthProvider>
+      <body className={inter.className} style={{ background: '#0a0a0a', color: '#f5f5f5' }}>
+        <Providers>
+          <AuthProvider>
+            <SyncProvider>
+              {children}
+            </SyncProvider>
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

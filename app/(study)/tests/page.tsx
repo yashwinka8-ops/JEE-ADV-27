@@ -258,7 +258,7 @@ export default function TestsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 16, marginBottom: 32 }}>
+      <div className="mobile-stack-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 16, marginBottom: 32 }}>
         <div className="stat-tile text-center">
           <div className="stat-label">Total Tests</div>
           <div className="stat-value" style={{ color: 'var(--blue)' }}>{mockTests.length}</div>
@@ -312,7 +312,7 @@ export default function TestsPage() {
               <input required className="input" placeholder="Paper Name (e.g. 8 Apr S2)" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               <input required type="date" className="input" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                 <input required type="number" min="0" max="100" className="input text-center" placeholder="Phy" value={form.physics} onChange={e => setForm({...form, physics: e.target.value})} />
                 <input required type="number" min="0" max="100" className="input text-center" placeholder="Chem" value={form.chemistry} onChange={e => setForm({...form, chemistry: e.target.value})} />
                 <input required type="number" min="0" max="100" className="input text-center" placeholder="Math" value={form.maths} onChange={e => setForm({...form, maths: e.target.value})} />
@@ -333,7 +333,7 @@ export default function TestsPage() {
             <form onSubmit={handleSetTargets} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input type="number" min="0" max="300" className="input text-center" placeholder="Target Total Score" value={targetForm.score || ''} onChange={e => setTargetForm({...targetForm, score: Number(e.target.value)})} />
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                 <input type="number" min="0" max="100" className="input text-center" placeholder="P" value={targetForm.physics || ''} onChange={e => setTargetForm({...targetForm, physics: Number(e.target.value)})} />
                 <input type="number" min="0" max="100" className="input text-center" placeholder="C" value={targetForm.chemistry || ''} onChange={e => setTargetForm({...targetForm, chemistry: Number(e.target.value)})} />
                 <input type="number" min="0" max="100" className="input text-center" placeholder="M" value={targetForm.maths || ''} onChange={e => setTargetForm({...targetForm, maths: Number(e.target.value)})} />
@@ -425,7 +425,7 @@ export default function TestsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
+          <div className="mobile-stack-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
             {[
               { key: 'physics', title: 'Physics', color: 'var(--blue)', target: mockTargets?.physics, median: medianPhys },
               { key: 'chemistry', title: 'Chemistry', color: 'var(--green)', target: mockTargets?.chemistry, median: medianChem },

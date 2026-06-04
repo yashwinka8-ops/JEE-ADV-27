@@ -516,9 +516,34 @@ input, textarea, select { font-family: inherit; }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── Markdown Content inside Chat ────────────────────────────── */
+.markdown-content p {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+.markdown-content ul, .markdown-content ol {
+  margin-top: 0;
+  margin-bottom: 8px;
+  padding-left: 20px;
+}
+.markdown-content li {
+  margin-bottom: 4px;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.markdown-content h3 { font-size: 15px; }
+.markdown-content h2 { font-size: 16px; }
+.markdown-content h1 { font-size: 18px; }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
@@ -652,5 +677,132 @@ input, textarea, select { font-family: inherit; }
   .btn-lg {
     padding: 10px 20px;
     font-size: 14px;
+  }
+}
+/* ==========================================================================
+   THE DIGITAL MIND PALACE (UNIVERSE UI)
+   ========================================================================== */
+
+.starfield {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 50px 160px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #ffffff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: stars 100s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+@keyframes stars {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-200px); }
+}
+
+@keyframes floatOrb {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15px) scale(1.02); }
+}
+
+@keyframes floatOrbReverse {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(15px) scale(0.98); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.1); }
+  50% { box-shadow: 0 0 80px rgba(255, 255, 255, 0.3); }
+}
+
+.planet-orb {
+  position: absolute;
+  border-radius: 50%;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.planet-orb:hover {
+  transform: scale(1.1) !important;
+  z-index: 10;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.planet-label {
+  position: absolute;
+  bottom: -30px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.hud-glass {
+  background: rgba(10, 10, 20, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.hud-back-btn:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+}
+
+@keyframes modalZoomIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+
+.universe-modal {
+  animation: modalZoomIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Sci-fi Scrollbar */
+.universe-modal::-webkit-scrollbar {
+  width: 4px;
+}
+.universe-modal::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS OVERRIDES (GLOBAL)
+   ========================================================================== */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+  }
+
+  .main-content {
+    padding: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Force all injected grid wrappers to become columns */
+  .mobile-stack-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
   }
 }

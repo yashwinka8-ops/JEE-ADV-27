@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, BookOpen, Timer, FlaskConical, BarChart3,
-  XCircle, Calendar, HelpCircle, Notebook, ScrollText, Flame, ChevronDown
+  XCircle, Calendar, HelpCircle, Notebook, ScrollText, Flame, ChevronDown, Repeat, Heart
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: '/planner',   label: 'Planner',      icon: Calendar },
   { href: '/tests',     label: 'Tests',        icon: FlaskConical },
   { href: '/pyq',       label: 'PYQ',          icon: ScrollText },
+  { href: '/revision',  label: 'Revision',     icon: Repeat },
   { href: '/mistakes',  label: 'Mistakes',     icon: XCircle },
   { href: '/analytics', label: 'Analytics',    icon: BarChart3 },
   { href: '/doubts',    label: 'Doubts',       icon: HelpCircle },

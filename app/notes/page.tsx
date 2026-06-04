@@ -81,7 +81,7 @@ export default function NotesPage() {
             const Icon = n.subject === 'physics' ? Atom : n.subject === 'chemistry' ? Beaker : Calculator;
             return (
               <div key={n.id} className="stat-tile" style={{ display: 'flex', flexDirection: 'column', padding: '18px 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 8, background: fillCol, color: subCol, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon size={14} />

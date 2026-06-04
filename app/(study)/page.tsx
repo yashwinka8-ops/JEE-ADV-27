@@ -3,7 +3,7 @@
 import { useStore } from '@/store/useStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BookOpen, Timer, FlaskConical, Target, ChevronRight, Flame, Zap, Atom, Beaker, Calculator, Book, Calendar as CalendarIcon, CheckCircle2, Circle, Play } from 'lucide-react';
+import { BookOpen, Timer, FlaskConical, Target, ChevronRight, Flame, Zap, Atom, Beaker, Calculator, Book, Calendar as CalendarIcon, CheckCircle2, Circle, Play, Repeat } from 'lucide-react';
 import { useMemo, useEffect, useState } from 'react';
 
 function useCountdown() {
@@ -29,7 +29,7 @@ function useCountdown() {
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export default function DashboardPage() {
-  const { chapters, sessions, dailyGoalMinutes, getTodayMinutes, getCurrentStreak, getLongestStreak, tasks, weeklyGoals, updateTask, updateWeeklyGoal } = useStore();
+  const { chapters, sessions, dailyGoalMinutes, getTodayMinutes, getCurrentStreak, getLongestStreak, tasks, weeklyGoals, updateTask, updateWeeklyGoal, revisions } = useStore();
   const router = useRouter();
   const cd = useCountdown();
 
@@ -64,9 +64,12 @@ export default function DashboardPage() {
     { key: 'maths',     label: 'Maths',     icon: Calculator, color: 'var(--amber)', fill: 'var(--amber-fill)' },
   ] as const;
 
+  const dueRevisions = useMemo(() => revisions.filter(r => r.nextRevisionDate <= todayStr && r.stage < 4), [revisions, todayStr]);
+
   const quickActions = [
     { href: '/timer',    icon: Timer,       label: 'Start Study Session', sub: 'Log a focused Pomodoro block', color: 'var(--blue)',  fill: 'var(--blue-fill)' },
     { href: '/syllabus', icon: BookOpen,    label: 'Update Syllabus',     sub: 'Mark topics & chapters done',  color: 'var(--green)', fill: 'var(--green-fill)' },
+    { href: '/revision', icon: Repeat,      label: 'Spaced Repetition',   sub: `${dueRevisions.length} topics due today`, color: 'var(--cyan)', fill: 'var(--cyan-fill)' },
     { href: '/tests',    icon: FlaskConical,label: 'Log Mock Test',       sub: 'Record your test score',       color: 'var(--amber)', fill: 'var(--amber-fill)' },
     { href: '/mistakes', icon: Target,      label: 'Add Mistake',         sub: 'Journal what went wrong',      color: 'var(--red)',   fill: 'var(--red-fill)' },
   ];
@@ -154,11 +157,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Action Center ───────────────────────────────────── */}
-      <div className="grid-2 mb-6" style={{ gap: 20 }}>
+      <div className="grid-2 mb-6" style={{ gap: 20, alignItems: 'start' }}>
         
         {/* Today's Agenda */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div className="card card-section">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-primary)' }}>
               <CalendarIcon size={18} />
               <h2 style={{ fontSize: 16, fontWeight: 600 }}>Today's Agenda</h2>
@@ -197,8 +200,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Weekly Goals */}
-        <div className="card">
+        <div className="card card-section">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: 'var(--blue)' }}>
             <Target size={18} />
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Weekly Goals</h2>
@@ -224,6 +228,42 @@ export default function DashboardPage() {
           </div>
         </div>
         
+        {/* Due Revisions */}
+        <div className="card card-section">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--cyan)' }}>
+              <Repeat size={18} />
+              <h2 style={{ fontSize: 16, fontWeight: 600 }}>Due Revisions</h2>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={() => router.push('/revision')}>Review All</button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {dueRevisions.length === 0 ? (
+              <div style={{ padding: 16, textAlign: 'center', color: 'var(--label-tertiary)', fontSize: 13, background: 'var(--bg-tertiary)', borderRadius: 12 }}>
+                No revisions due today.
+              </div>
+            ) : (
+              dueRevisions.slice(0, 3).map(r => {
+                return (
+                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 12 }}>
+                    <div style={{ flex: 1, fontSize: 14, fontWeight: 500, color: 'var(--label-primary)' }}>
+                      {r.title}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--label-tertiary)', fontWeight: 600, background: 'var(--bg-tertiary)', padding: '2px 8px', borderRadius: 8 }}>
+                      Stage {r.stage}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            {dueRevisions.length > 3 && (
+              <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--label-tertiary)', marginTop: 4 }}>+ {dueRevisions.length - 3} more due</div>
+            )}
+          </div>
+        </div>
+        </div>
+        
       </div>
 
       {/* Subject Progress ───────────────────────────────────── */}
@@ -238,7 +278,7 @@ export default function DashboardPage() {
                   <sub.icon size={18} />
                 </div>
                 <div className="list-row-body">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 6 }}>
                     <span style={{ fontWeight: 600 }}>{sub.label}</span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: sub.color }}>{s.pct}%</span>
                   </div>

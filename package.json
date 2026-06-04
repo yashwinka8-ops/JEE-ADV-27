@@ -11,6 +11,7 @@
   "dependencies": {
     "@capacitor/android": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@twemoji/api": "^17.0.3",
     "firebase": "^12.14.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
@@ -18,10 +19,15 @@
     "katex": "^0.17.0",
     "lucide-react": "^1.17.0",
     "next": "16.2.7",
+    "next-auth": "^4.24.14",
     "react": "19.2.4",
+    "react-apple-emojis": "^3.0.0",
     "react-dom": "19.2.4",
     "react-katex": "^3.1.0",
+    "react-markdown": "^10.1.0",
+    "react-rnd": "^10.5.3",
     "recharts": "^3.8.1",
+    "remark-gfm": "^4.0.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

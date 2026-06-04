@@ -110,7 +110,7 @@ export default function PlannerPage() {
         <button className="btn btn-primary" onClick={() => setShow(true)}><Plus size={16} />Add Task</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: 32, alignItems: 'start', maxWidth: 1100 }}>
+      <div className="mobile-stack-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: 32, alignItems: 'start', maxWidth: 1100 }}>
 
         {/* --- LEFT COLUMN: WEEKLY GOALS --- */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -122,7 +122,7 @@ export default function PlannerPage() {
           </div>
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16 }}>
             {weeklyGoals.map(g => (
-              <div key={g.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, opacity: g.completed ? 0.6 : 1 }}>
+              <div key={g.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, gap: 12, opacity: g.completed ? 0.6 : 1 }}>
                 <div 
                   onClick={() => updateWeeklyGoal(g.id, { completed: !g.completed })}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', flex: 1 }}
@@ -168,7 +168,7 @@ export default function PlannerPage() {
 
           {/* Today */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-primary)' }}>
                 <CalendarIcon size={18} />
                 <h2 style={{ fontSize: 16, fontWeight: 600 }}>Today's Agenda</h2>

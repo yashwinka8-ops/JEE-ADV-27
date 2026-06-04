@@ -98,7 +98,7 @@ export default function MistakesPage() {
             const subCol = m.subject === 'physics' ? 'var(--blue)' : m.subject === 'chemistry' ? 'var(--green)' : 'var(--amber)';
             return (
               <div key={m.id} className="stat-tile" style={{ opacity: m.understood ? 0.55 : 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', marginBottom: 10 }}>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     <span className="tag" style={{ background: `${subCol}18`, color: subCol }}>{m.subject}</span>
                     {m.chapter && <span className="tag tag-muted">{m.chapter}</span>}

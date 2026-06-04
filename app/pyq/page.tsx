@@ -59,7 +59,7 @@ export default function PYQPage() {
         <div className="progress-bar mb-2">
           <div className="progress-fill" style={{ width: `${percent}%`, background: 'var(--blue)' }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--label-secondary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, fontSize: 13, color: 'var(--label-secondary)' }}>
           <span>{completedBuckets} / {totalBuckets} buckets completed</span>
           <span style={{ fontWeight: 600, color: 'var(--blue)', fontSize: 18 }}>{percent}%</span>
         </div>
@@ -96,7 +96,7 @@ export default function PYQPage() {
               <div
                 onClick={() => toggleExpand(chapter.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
                   padding: '16px 20px', cursor: 'pointer', background: open ? 'var(--bg-tertiary)' : 'transparent',
                   transition: 'background 0.2s',
                 }}

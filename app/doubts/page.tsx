@@ -95,7 +95,7 @@ export default function DoubtsPage() {
             const subCol = d.subject === 'physics' ? 'var(--blue)' : d.subject === 'chemistry' ? 'var(--green)' : 'var(--amber)';
             return (
               <div key={d.id} className="stat-tile" style={{ opacity: d.status === 'cleared' ? 0.65 : 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', marginBottom: 10 }}>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     <span className="tag" style={{ background: `${subCol}18`, color: subCol }}>{d.subject}</span>
                     {d.chapter && <span className="tag tag-muted">{d.chapter}</span>}

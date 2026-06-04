@@ -1,0 +1,33 @@
+name: Next.js CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci || npm install
+
+    - name: Build Next.js app
+      run: npm run build
+      env:
+        # Dummy values for build phase to prevent build errors if the build requires env vars
+        GOOGLE_CLIENT_ID: dummy_id
+        GOOGLE_CLIENT_SECRET: dummy_secret
+        NEXTAUTH_SECRET: dummy_secret
+        NEXTAUTH_URL: http://localhost:3000
