@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import type { Relationship, RelationshipMemory, RelationshipConvoLog } from '@/store/useStore';
 import AppleEmoji from '@/components/AppleEmoji';
-import { useSession } from 'next-auth/react';
+
 import { Plus, X, Trash2, Phone, AtSign, MapPin, Gift, Calendar, Clock, ChevronRight, MessageSquare, Heart, Cloud, UploadCloud, File as FileIcon, Edit2, Image as ImageIcon } from 'lucide-react';
 
 const TYPES = [
@@ -39,7 +39,7 @@ const Textarea = ({ label, value, onChange, placeholder = '', rows = 3 }: any) =
 );
 
 export default function RelationshipsPage() {
-  const { relationships, addRelationship, updateRelationship, removeRelationship } = useStore();
+  const { relationships, addRelationship, updateRelationship, removeRelationship, firebaseUser } = useStore();
   const [selected, setSelected] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyRel());
@@ -48,7 +48,6 @@ export default function RelationshipsPage() {
   const [convoNote, setConvoNote] = useState('');
   const [memoryNote, setMemoryNote] = useState('');
   const [uploading, setUploading] = useState(false);
-  const { data: session } = useSession();
 
   const person = selected ? relationships.find(r => r.id === selected) : null;
   const typeDef = person ? TYPES.find(t => t.k === person.type) || TYPES[5] : null;
