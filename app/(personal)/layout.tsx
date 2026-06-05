@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AppleEmoji from '@/components/AppleEmoji';
 import NotificationManager from '@/components/NotificationManager';
+import FirebaseSync from '@/components/FirebaseSync';
 
 const SECTIONS = [
   { href: '/personal',               emoji: '🏠', label: 'Home',          glow: '#f59e0b' },
@@ -21,12 +22,13 @@ const SECTIONS = [
   { href: '/personal/self',          emoji: '🧩', label: 'Self',          glow: '#8b5cf6' },
 ];
 
-const PASSWORD = '240622';
+import { verifyPersonalPin } from './actions';
 
 export default function PersonalLayout({ children }: { children: React.ReactNode }) {
   const [password, setPassword]   = useState('');
   const [authed,   setAuthed]     = useState(false);
   const [error,    setError]      = useState(false);
+  const [loadingPin, setLoadingPin] = useState(false);
   const [tooltip,  setTooltip]    = useState('');
   const [mounted,  setMounted]    = useState(false);
   const pathname = usePathname();
@@ -63,11 +65,14 @@ export default function PersonalLayout({ children }: { children: React.ReactNode
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>Life OS</h1>
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 13, marginBottom: 36 }}>
-            Your private universe. Password required.
+            Your private universe. PIN required.
           </p>
-          <form onSubmit={e => {
+          <form onSubmit={async (e) => {
             e.preventDefault();
-            if (password === PASSWORD) { setAuthed(true); }
+            setLoadingPin(true);
+            const isValid = await verifyPersonalPin(password);
+            setLoadingPin(false);
+            if (isValid) { setAuthed(true); }
             else { setError(true); setPassword(''); }
           }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <input
@@ -80,16 +85,17 @@ export default function PersonalLayout({ children }: { children: React.ReactNode
                 textAlign: 'center', letterSpacing: 10, fontFamily: 'monospace',
               }}
             />
-            {error && <p style={{ color: '#ef4444', fontSize: 12, margin: 0 }}>Wrong password.</p>}
-            <button type="submit" style={{
+            {error && <p style={{ color: '#ef4444', fontSize: 12, margin: 0 }}>Wrong PIN.</p>}
+            <button type="submit" disabled={loadingPin} style={{
               background: 'linear-gradient(135deg, #f59e0b, #ec4899)',
               border: 'none', borderRadius: 14, padding: '14px', color: '#000',
-              fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: 0.5,
-            }}>ENTER YOUR UNIVERSE</button>
+              fontWeight: 800, fontSize: 14, cursor: loadingPin ? 'wait' : 'pointer', letterSpacing: 0.5,
+              opacity: loadingPin ? 0.7 : 1
+            }}>{loadingPin ? 'VERIFYING...' : 'ENTER YOUR UNIVERSE'}</button>
           </form>
           <div style={{ marginTop: 24 }}>
             <Link href="/" style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, textDecoration: 'none' }}>
-              ← Back to JEE Tracker
+              ← Back to Dashboard
             </Link>
           </div>
         </div>
@@ -100,6 +106,7 @@ export default function PersonalLayout({ children }: { children: React.ReactNode
   /* ── Main App Shell ─────────────────────────────────── */
   return (
     <div style={{ minHeight: '100vh', background: '#020209', display: 'flex', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
+      <FirebaseSync />
 
       {/* Global BG glow */}
       <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />

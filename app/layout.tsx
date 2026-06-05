@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
+import AuthGuard from '@/components/AuthGuard';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className} style={{ background: '#0a0a0a', color: '#f5f5f5' }}>
         <Providers>
-          {children}
+          <AuthGuard>
+            {children}
+          </AuthGuard>
         </Providers>
       </body>
     </html>

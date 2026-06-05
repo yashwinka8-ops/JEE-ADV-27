@@ -348,6 +348,8 @@ interface StoreState {
   getLongestStreak: () => number;
 
   // Firebase Sync
+  firebaseUser: any | null;
+  setFirebaseUser: (user: any | null) => void;
   _hasHydrated: boolean;
   setHasHydrated: (h: boolean) => void;
   replaceStoreData: (data: Partial<StoreState>) => void;
@@ -453,6 +455,9 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
+      firebaseUser: null,
+      setFirebaseUser: (user) => set({ firebaseUser: user }),
+
       // ── Syllabus ──────────────────────────
       chapters: initialSyllabus,
       updateMastery: (chapterId, level) =>
