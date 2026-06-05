@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
-import { auth, googleProvider, firebaseSignOut } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, linkWithPopup, reauthenticateWithPopup } from 'firebase/auth';
-import { fetchGooglePhotos, getDriveFolder, createDriveFolder, syncFileToDrive } from '@/lib/googleApi';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { 
   CloudSun, Focus, Target, CheckCircle2, Circle, 
-  Quote, MapPin, Wind, Sparkles, Cloud, Image as ImageIcon
+  Quote, MapPin, Wind, Sparkles, Cloud, Image as ImageIcon,
+  Calendar, ListTodo, Mail, Tv, ExternalLink, Play, X
 } from 'lucide-react';
 import AppleEmoji from '@/components/AppleEmoji';
 
@@ -41,8 +40,11 @@ const GITA_SHLOKAS = [
 ];
 
 export default function PersonalDashboard() {
+  const { data: session } = useSession();
+  const user = session?.user;
+  const accessToken = (session as any)?.accessToken;
   const store = useStore();
-  const { todayFocus, setTodayFocus, lifeHabits, toggleHabit, lifeGoals, customMemories, addCustomMemory, removeCustomMemory, firebaseUser, googleAccessToken, setGoogleAccessToken } = store;
+  const { todayFocus, setTodayFocus, lifeHabits, toggleHabit, lifeGoals, customMemories, addCustomMemory, removeCustomMemory } = store;
   const [mounted, setMounted] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [quickNote, setQuickNote] = useState('');
@@ -50,21 +52,63 @@ export default function PersonalDashboard() {
   const [loadingShloka, setLoadingShloka] = useState(true);
   const [photos, setPhotos] = useState<any[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [calEvents, setCalEvents] = useState<any[]>([]);
+  const [loadingCal, setLoadingCal] = useState(false);
+  const [gTasks, setGTasks] = useState<any[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [gmailData, setGmailData] = useState<any>(null);
+  const [loadingGmail, setLoadingGmail] = useState(false);
+  const [ytVideos, setYtVideos] = useState<any[]>([]);
+  const [loadingYt, setLoadingYt] = useState(false);
+  
+  // Email Reading State
+  const [selectedThread, setSelectedThread] = useState<any>(null);
+  const [loadingThread, setLoadingThread] = useState(false);
   
   useEffect(() => {
-    if (firebaseUser && googleAccessToken) {
-      setLoadingPhotos(true);
-      fetchGooglePhotos(googleAccessToken)
-        .then(mediaItems => {
-          if (mediaItems) setPhotos(mediaItems.filter((i: any) => i.mimeType?.startsWith('image/')));
-          setLoadingPhotos(false);
-        })
-        .catch(err => {
-          console.error('Failed to fetch photos', err);
-          setLoadingPhotos(false);
-        });
-    }
-  }, [firebaseUser, googleAccessToken]);
+    if (!user || !accessToken) return;
+    const headers = { Authorization: `Bearer ${accessToken}` };
+
+    // Photos
+    setLoadingPhotos(true);
+    fetch('/api/google/photos', { headers })
+      .then(r => r.json())
+      .then(d => { if (d.mediaItems) setPhotos(d.mediaItems.filter((i: any) => i.mimeType?.startsWith('image/'))); })
+      .catch(e => console.error('Photos error:', e))
+      .finally(() => setLoadingPhotos(false));
+
+    // Calendar
+    setLoadingCal(true);
+    fetch('/api/google/calendar', { headers })
+      .then(r => r.json())
+      .then(d => { if (d.events) setCalEvents(d.events); })
+      .catch(e => console.error('Calendar error:', e))
+      .finally(() => setLoadingCal(false));
+
+    // Tasks
+    setLoadingTasks(true);
+    fetch('/api/google/tasks', { headers })
+      .then(r => r.json())
+      .then(d => { if (d.tasks) setGTasks(d.tasks); })
+      .catch(e => console.error('Tasks error:', e))
+      .finally(() => setLoadingTasks(false));
+
+    // Gmail
+    setLoadingGmail(true);
+    fetch('/api/google/gmail', { headers })
+      .then(r => r.json())
+      .then(d => setGmailData(d))
+      .catch(e => console.error('Gmail error:', e))
+      .finally(() => setLoadingGmail(false));
+
+    // YouTube
+    setLoadingYt(true);
+    fetch('/api/google/youtube', { headers })
+      .then(r => r.json())
+      .then(d => { if (d.videos) setYtVideos(d.videos); })
+      .catch(e => console.error('YouTube error:', e))
+      .finally(() => setLoadingYt(false));
+  }, [user, accessToken]);
   
   useEffect(() => {
     setMounted(true);
@@ -133,64 +177,35 @@ export default function PersonalDashboard() {
   };
 
   const handleSync = async () => {
-    if (!firebaseUser || !googleAccessToken) return alert('Connect Google first!');
+    if (!user || !accessToken) return alert('Connect Google first!');
     setSyncing(true);
     try {
-      let folderId = await getDriveFolder(googleAccessToken);
-      if (!folderId) {
-        folderId = await createDriveFolder(googleAccessToken);
+      const res = await fetch('/api/google/drive/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          journals: store.journalEntries,
+          dreams: store.dreamCards,
+          goals: store.lifeGoals,
+          brainNotes: store.brainNotes,
+          relationships: store.relationships
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Successfully synced ${data.count} items to Google Drive!`);
+      } else {
+        const errData = await res.json();
+        alert('Sync failed: ' + errData.error);
       }
-      if (!folderId) throw new Error('Could not create or find Life OS folder');
-
-      // Sync all items as individual files for now (or a single JSON dump)
-      const dataDump = JSON.stringify({
-        journals: store.journalEntries,
-        dreams: store.dreamCards,
-        goals: store.lifeGoals,
-        brainNotes: store.brainNotes,
-        relationships: store.relationships
-      }, null, 2);
-
-      await syncFileToDrive(googleAccessToken, 'LifeOS_Backup.json', dataDump, folderId);
-      
-      alert('Successfully synced backup to Google Drive!');
-    } catch (e: any) {
-      alert('Error syncing to Drive: ' + e.message);
+    } catch (e) {
+      alert('Error syncing to Drive.');
     } finally {
       setSyncing(false);
     }
-  };
-
-  const handleConnectGoogle = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return alert('Please sign in first.');
-
-    try {
-      // Try to link the Google account to the current user
-      const result = await linkWithPopup(currentUser, googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) setGoogleAccessToken(credential.accessToken);
-    } catch (linkError: any) {
-      if (linkError.code === 'auth/credential-already-in-use' || linkError.code === 'auth/provider-already-linked') {
-        // Already linked — just reauthenticate to get a fresh access token
-        try {
-          const result = await reauthenticateWithPopup(currentUser, googleProvider);
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          if (credential?.accessToken) setGoogleAccessToken(credential.accessToken);
-        } catch (reAuthError) {
-          console.error('Reauth failed', reAuthError);
-          alert('Failed to connect Google Drive.');
-        }
-      } else {
-        console.error('Link failed', linkError);
-        alert('Failed to connect Google: ' + linkError.message);
-      }
-    }
-  };
-
-  const handleDisconnectGoogle = () => {
-    // Only clear the Drive token — do NOT sign out the user
-    setGoogleAccessToken(null);
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,6 +250,24 @@ export default function PersonalDashboard() {
     { label: 'Journal', href: '/personal/journal', emoji: '📓', color: '#ea580c', desc: 'Daily logs & entries' },
   ];
 
+  const openEmailThread = async (threadId: string) => {
+    setSelectedThread({ id: threadId, messages: [] });
+    setLoadingThread(true);
+    try {
+      const res = await fetch(`/api/google/gmail/${threadId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await res.json();
+      if (data.messages) {
+        setSelectedThread(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingThread(false);
+    }
+  };
+
   if (!mounted) return null;
 
   return (
@@ -253,23 +286,23 @@ export default function PersonalDashboard() {
           <p style={{ color: '#94a3b8', fontSize: 16, fontWeight: 500 }}>Ready to conquer the day?</p>
         </div>
         <div className="mobile-header-actions" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          {/* Google Drive Connect / Sync */}
-          {googleAccessToken ? (
+          {/* Google Connect Button */}
+          {user ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <button onClick={handleSync} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: syncing ? 'wait' : 'pointer', boxShadow: '0 4px 14px rgba(16,185,129,0.3)', opacity: syncing ? 0.7 : 1 }}>
                 <CloudSun size={16} /> {syncing ? 'Syncing...' : 'Sync to Drive'}
               </button>
-              <button onClick={handleDisconnectGoogle} title="Disconnect Google Drive" style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }}>
-                {firebaseUser?.photoURL ? <img src={firebaseUser.photoURL} alt="Profile" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <Cloud size={18} color="#10b981" />}
-                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                  <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>{firebaseUser?.displayName || firebaseUser?.email}</div>
-                  <div style={{ fontSize: 10, color: '#10b981' }}>Drive Connected ✓</div>
+              <button onClick={() => signOut()} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', padding: '10px 16px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', transition: 'background 0.2s' }}>
+                {user.image ? <img src={user.image} alt="Profile" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <Cloud size={18} color="#60a5fa" />}
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 600 }}>{user.name}</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8' }}>Connected</div>
                 </div>
               </button>
             </div>
           ) : (
-            <button onClick={handleConnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3b82f6', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.4)', transition: 'transform 0.2s' }}>
-              <Cloud size={16} /> Connect Google Drive
+            <button onClick={() => signIn()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#3b82f6', color: '#fff', padding: '10px 16px', borderRadius: 20, border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 14px rgba(59,130,246,0.4)', transition: 'transform 0.2s' }}>
+              <Cloud size={16} /> Connect Google
             </button>
           )}
           <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.02)', padding: '12px 24px', borderRadius: 24, border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
@@ -423,6 +456,135 @@ export default function PersonalDashboard() {
 
       </div>
 
+      {/* ── Google Integrations ─────────────────────────── */}
+      {user && accessToken && (
+        <>
+          <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 32, display: 'flex', alignItems: 'center', gap: 12, letterSpacing: '-0.5px' }}>
+            <AppleEmoji emoji="🔗" size={28} /> Google Connected
+          </h2>
+          <div className="dashboard-grid mobile-stack-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24, marginBottom: 48 }}>
+
+            {/* 📅 Calendar Widget */}
+            <div style={{ gridColumn: 'span 4', background: 'rgba(20,25,35,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 32, padding: 28, boxShadow: '0 20px 40px -20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: -40, right: -20, width: 120, height: 120, background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#3b82f6', marginBottom: 20 }}>
+                <Calendar size={20} strokeWidth={2.5} />
+                <span style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: 12, letterSpacing: '1.5px' }}>Calendar</span>
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: '#64748b', fontWeight: 600 }}>Next 7 days</span>
+              </div>
+              {loadingCal ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[1,2,3].map(i => <div key={i} style={{ height: 48, background: 'rgba(255,255,255,0.02)', borderRadius: 12, animation: 'pulse 1.5s infinite' }} />)}
+                </div>
+              ) : calEvents.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 280, overflowY: 'auto' }}>
+                  {calEvents.slice(0, 6).map(ev => {
+                    const startDate = new Date(ev.start);
+                    const isToday = startDate.toDateString() === new Date().toDateString();
+                    const timeStr = ev.start.includes('T') ? startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'All day';
+                    const dayStr = isToday ? 'Today' : startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    return (
+                      <a key={ev.id} href={ev.htmlLink} target="_blank" rel="noopener noreferrer" style={{
+                        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                        background: isToday ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${isToday ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                        borderRadius: 14, textDecoration: 'none', transition: 'background 0.2s',
+                      }}>
+                        <div style={{ width: 4, height: 36, borderRadius: 4, background: isToday ? '#3b82f6' : '#475569', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.summary}</div>
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{dayStr} · {timeStr}</div>
+                        </div>
+                        <ExternalLink size={12} color="#475569" style={{ flexShrink: 0 }} />
+                      </a>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: 20, textAlign: 'center', color: '#475569', fontSize: 13 }}>No upcoming events</div>
+              )}
+            </div>
+
+            {/* ✅ Tasks Widget */}
+            <div style={{ gridColumn: 'span 4', background: 'rgba(20,25,35,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 32, padding: 28, boxShadow: '0 20px 40px -20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: -40, right: -20, width: 120, height: 120, background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#10b981', marginBottom: 20 }}>
+                <ListTodo size={20} strokeWidth={2.5} />
+                <span style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: 12, letterSpacing: '1.5px' }}>Google Tasks</span>
+                {gTasks.length > 0 && <span style={{ marginLeft: 'auto', background: 'rgba(16,185,129,0.15)', color: '#10b981', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>{gTasks.length}</span>}
+              </div>
+              {loadingTasks ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[1,2,3].map(i => <div key={i} style={{ height: 44, background: 'rgba(255,255,255,0.02)', borderRadius: 12, animation: 'pulse 1.5s infinite' }} />)}
+                </div>
+              ) : gTasks.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 280, overflowY: 'auto' }}>
+                  {gTasks.slice(0, 8).map(task => (
+                    <div key={task.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+                      borderRadius: 14,
+                    }}>
+                      <Circle size={16} color="rgba(255,255,255,0.15)" style={{ flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</div>
+                        {task.due && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Due: {new Date(task.due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: 20, textAlign: 'center', color: '#475569', fontSize: 13 }}>
+                  <AppleEmoji emoji="🎉" size={28} />
+                  <div style={{ marginTop: 8 }}>All tasks done!</div>
+                </div>
+              )}
+            </div>
+
+            {/* 📧 Gmail Widget */}
+            <div style={{ gridColumn: 'span 4', background: 'rgba(20,25,35,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 32, padding: 28, boxShadow: '0 20px 40px -20px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: -40, right: -20, width: 120, height: 120, background: 'radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#ef4444', marginBottom: 20 }}>
+                <Mail size={20} strokeWidth={2.5} />
+                <span style={{ fontWeight: 800, textTransform: 'uppercase', fontSize: 12, letterSpacing: '1.5px' }}>Gmail</span>
+                {gmailData?.unreadCount > 0 && (
+                  <span style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.2)', color: '#ef4444', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 800 }}>
+                    {gmailData.unreadCount} unread
+                  </span>
+                )}
+              </div>
+              {loadingGmail ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[1,2,3].map(i => <div key={i} style={{ height: 52, background: 'rgba(255,255,255,0.02)', borderRadius: 12, animation: 'pulse 1.5s infinite' }} />)}
+                </div>
+              ) : gmailData?.threads && gmailData.threads.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 280, overflowY: 'auto' }}>
+                  {gmailData.threads.map((t: any) => (
+                    <button key={t.id} onClick={() => openEmailThread(t.id)} style={{
+                      display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px',
+                      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+                      borderRadius: 14, textAlign: 'left', cursor: 'pointer', transition: 'background 0.2s',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, width: '100%' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#ef4444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{t.from}</div>
+                        <ExternalLink size={10} color="#475569" style={{ flexShrink: 0 }} />
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>{t.subject}</div>
+                      <div style={{ fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>{t.snippet}</div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: 20, textAlign: 'center', color: '#475569', fontSize: 13 }}>
+                  <AppleEmoji emoji="📭" size={28} />
+                  <div style={{ marginTop: 8 }}>Inbox zero! 🎉</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Memories */}
       <div style={{ background: 'rgba(20,25,35,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 32, padding: 36, boxShadow: '0 20px 40px -20px rgba(0,0,0,0.5)', overflow: 'hidden', marginBottom: 48 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
@@ -513,10 +675,71 @@ export default function PersonalDashboard() {
         ))}
       </div>
       
+      {/* Email Reader Modal */}
+      {selectedThread && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', padding: 24, animation: 'fadeUp 0.3s ease-out'
+        }}>
+          <div style={{
+            background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24,
+            width: '100%', maxWidth: 800, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden'
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Mail size={20} color="#ef4444" />
+                <span style={{ fontWeight: 700, fontSize: 15 }}>Reading Email</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <a href={`https://mail.google.com/mail/u/0/#inbox/${selectedThread.id}`} target="_blank" rel="noopener noreferrer" style={{
+                  background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, padding: '8px 12px',
+                  color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6
+                }}>
+                  Open in Gmail <ExternalLink size={12} />
+                </a>
+                <button onClick={() => setSelectedThread(null)} style={{
+                  background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, width: 32, height: 32,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer'
+                }}>
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            
+            <div style={{ padding: 24, overflowY: 'auto', flex: 1, background: '#ffffff', color: '#000' }}>
+              {loadingThread ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <div style={{ width: 40, height: 40, border: '3px solid #ef4444', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ color: '#64748b', fontWeight: 500 }}>Decrypting message...</div>
+                </div>
+              ) : selectedThread.messages?.map((msg: any, idx: number) => (
+                <div key={msg.id} style={{ marginBottom: idx < selectedThread.messages.length - 1 ? 40 : 0 }}>
+                  <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+                    <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 12, lineHeight: 1.4 }}>{msg.subject}</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <div style={{ fontWeight: 600, color: '#334155' }}>{msg.from}</div>
+                      <div style={{ color: '#64748b' }}>{new Date(msg.date).toLocaleString()}</div>
+                    </div>
+                  </div>
+                  {/* Note: In a production app, use DOMPurify to sanitize bodyHtml before rendering */}
+                  <div style={{ background: '#fff', borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                    <iframe srcDoc={msg.bodyHtml} style={{ width: '100%', height: '60vh', minHeight: 400, border: 'none', display: 'block' }} sandbox="allow-same-origin allow-popups" title="Email Content" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{__html:`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px) scale(0.98) }
           to { opacity: 1; transform: translateY(0) scale(1) }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg) }
         }
         .module-card:hover {
           transform: translateY(-4px) scale(1.02) !important;
@@ -524,6 +747,8 @@ export default function PersonalDashboard() {
           border-color: rgba(255,255,255,0.1) !important;
           box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6) !important;
         }
+        .email-body a { color: #2563eb; text-decoration: underline; }
+        .email-body img { max-width: 100%; height: auto; }
       `}} />
     </div>
   );

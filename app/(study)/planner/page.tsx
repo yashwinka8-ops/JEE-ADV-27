@@ -122,7 +122,7 @@ export default function PlannerPage() {
           </div>
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16 }}>
             {weeklyGoals.map(g => (
-              <div key={g.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, gap: 12, opacity: g.completed ? 0.6 : 1 }}>
+              <div key={g.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, opacity: g.completed ? 0.6 : 1 }}>
                 <div 
                   onClick={() => updateWeeklyGoal(g.id, { completed: !g.completed })}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', flex: 1 }}

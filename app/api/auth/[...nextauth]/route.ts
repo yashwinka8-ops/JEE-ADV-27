@@ -1,7 +1,7 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -11,28 +11,34 @@ export const authOptions: NextAuthOptions = {
           prompt: "consent",
           access_type: "offline",
           response_type: "code",
-          // Adding scopes for basic profile, email, and file-level access to Drive and Photos
-          scope: "openid email profile https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/photoslibrary.readonly"
+          scope: [
+            "openid email profile",
+            "https://www.googleapis.com/auth/drive.file",
+            "https://www.googleapis.com/auth/photoslibrary.readonly",
+            "https://www.googleapis.com/auth/calendar.readonly",
+            "https://www.googleapis.com/auth/tasks.readonly",
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/youtube.readonly",
+          ].join(" ")
         }
       }
-    })
+    }),
   ],
   callbacks: {
     async jwt({ token, account }) {
-      // Persist the OAuth access_token right after signin
+      // Persist the OAuth access_token to the token right after signin
       if (account) {
         token.accessToken = account.access_token;
       }
       return token;
     },
-    async session({ session, token, user }) {
+    async session({ session, token }: any) {
       // Send properties to the client, like an access_token from a provider.
-      (session as any).accessToken = token.accessToken;
+      session.accessToken = token.accessToken;
       return session;
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+});
 
-const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

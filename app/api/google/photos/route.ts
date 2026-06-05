@@ -1,33 +1,26 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+function getAccessToken(req: NextRequest): string | null {
+  const auth = req.headers.get('Authorization');
+  if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
+  return null;
+}
+
+export async function GET(req: NextRequest) {
+  const token = getAccessToken(req);
+  if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
   try {
-    const session: any = await getServerSession(authOptions);
-
-    if (!session || !session.accessToken) {
-      return NextResponse.json({ error: 'Unauthorized. No access token.' }, { status: 401 });
-    }
-
-    // Fetch the 10 most recent media items
-    const response = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=10', {
-      headers: {
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Google Photos API Error:', errorData);
-      return NextResponse.json({ error: 'Failed to fetch from Google Photos API' }, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json({ mediaItems: data.mediaItems || [] });
-
-  } catch (error) {
-    console.error('Photos API Route Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const res = await fetch(
+      'https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=20',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    if (!res.ok) return NextResponse.json({ error: data.error?.message || 'Failed to fetch photos' }, { status: res.status });
+    return NextResponse.json(data);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

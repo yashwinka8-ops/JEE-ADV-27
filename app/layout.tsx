@@ -3,9 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
 
-import { AuthProvider } from '@/components/AuthProvider';
-import { SyncProvider } from '@/components/SyncProvider';
-
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -29,11 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className} style={{ background: '#0a0a0a', color: '#f5f5f5' }}>
         <Providers>
-          <AuthProvider>
-            <SyncProvider>
-              {children}
-            </SyncProvider>
-          </AuthProvider>
+          {children}
         </Providers>
       </body>
     </html>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AppleEmoji from '@/components/AppleEmoji';
+import NotificationManager from '@/components/NotificationManager';
 
 const SECTIONS = [
   { href: '/personal',               emoji: '🏠', label: 'Home',          glow: '#f59e0b' },
@@ -146,8 +147,9 @@ export default function PersonalLayout({ children }: { children: React.ReactNode
           );
         })}
 
-        {/* Back link at bottom */}
-        <div style={{ marginTop: 'auto' }}>
+        {/* Notification Bell */}
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <NotificationManager />
           <Link href="/" title="Back to JEE Tracker" style={{
             width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center',
             justifyContent: 'center', textDecoration: 'none', fontSize: 18, opacity: 0.3,
