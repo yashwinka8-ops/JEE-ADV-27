@@ -16,7 +16,7 @@ const handler = NextAuth({
             "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/photoslibrary.readonly",
             "https://www.googleapis.com/auth/calendar.readonly",
-            "https://www.googleapis.com/auth/tasks.readonly",
+            "https://www.googleapis.com/auth/tasks",
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/youtube.readonly",
           ].join(" ")

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BookOpen, Timer, FlaskConical, Target, ChevronRight, Flame, Zap, Atom, Beaker, Calculator, Book, Calendar as CalendarIcon, CheckCircle2, Circle, Play, Repeat } from 'lucide-react';
 import { useMemo, useEffect, useState } from 'react';
+import GoogleTasksTracker from '@/components/GoogleTasksTracker';
 
 function useCountdown() {
   const [t, setT] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
@@ -157,7 +158,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Action Center ───────────────────────────────────── */}
-      <div className="grid-2 mb-6" style={{ gap: 20, alignItems: 'start' }}>
+      <div className="grid-3 mb-6" style={{ gap: 20, alignItems: 'start' }}>
         
         {/* Today's Agenda */}
         <div className="card card-section">
@@ -199,6 +200,9 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Google Tasks To-Do List Tracker */}
+        <GoogleTasksTracker />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Weekly Goals */}
