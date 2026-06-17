@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json();
+      console.error('Google Tasks POST failed. Response code:', res.status, 'Error:', err);
       return NextResponse.json(
         { error: err.error?.message || 'Failed to create task' },
         { status: res.status }
@@ -208,6 +209,7 @@ export async function DELETE(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json();
+      console.error('Google Tasks DELETE failed. Response code:', res.status, 'Error:', err);
       return NextResponse.json(
         { error: err.error?.message || 'Failed to delete task' },
         { status: res.status }
