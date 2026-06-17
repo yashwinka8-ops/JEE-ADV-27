@@ -163,6 +163,7 @@ export async function PATCH(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json();
+      console.error('Google Tasks PATCH failed. Response code:', res.status, 'Error:', err);
       return NextResponse.json(
         { error: err.error?.message || 'Failed to update task' },
         { status: res.status }

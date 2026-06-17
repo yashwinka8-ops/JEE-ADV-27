@@ -99,6 +99,15 @@ export default function GoogleTasksTracker() {
     }
   }, [token]);
 
+  // Periodic background sync every 45 seconds to keep in sync with mobile Tasks app
+  useEffect(() => {
+    if (!token || !activeListId) return;
+    const interval = setInterval(() => {
+      loadData(activeListId, true);
+    }, 45000);
+    return () => clearInterval(interval);
+  }, [token, activeListId]);
+
   // Handle switching list
   const handleSelectList = (listId: string) => {
     setShowListsDropdown(false);
@@ -131,7 +140,8 @@ export default function GoogleTasksTracker() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to update status');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update status');
       }
       
       const updatedData = await res.json();
@@ -140,7 +150,7 @@ export default function GoogleTasksTracker() {
     } catch (err: any) {
       // Revert on failure
       setTasks(prevTasks);
-      setError('Could not update task status. Try again.');
+      setError(err.message || 'Could not update task status. Try again.');
     } finally {
       setSyncing(false);
     }
@@ -186,14 +196,15 @@ export default function GoogleTasksTracker() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to add task');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to add task');
       }
 
       const created = await res.json();
       setTasks(prev => prev.map(t => t.id === tempId ? created : t));
     } catch (err: any) {
       setTasks(prev => prev.filter(t => t.id !== tempId));
-      setError('Could not add task. Try again.');
+      setError(err.message || 'Could not add task. Try again.');
     } finally {
       setSyncing(false);
     }
@@ -215,11 +226,12 @@ export default function GoogleTasksTracker() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to delete task');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete task');
       }
     } catch (err: any) {
       setTasks(prevTasks);
-      setError('Could not delete task. Try again.');
+      setError(err.message || 'Could not delete task. Try again.');
     } finally {
       setSyncing(false);
     }
@@ -266,14 +278,15 @@ export default function GoogleTasksTracker() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to update task');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update task');
       }
 
       const updated = await res.json();
       setTasks(prev => prev.map(t => t.id === taskId ? updated : t));
     } catch (err: any) {
       setTasks(prevTasks);
-      setError('Could not save task changes.');
+      setError(err.message || 'Could not save task changes.');
     } finally {
       setSyncing(false);
     }
@@ -410,7 +423,32 @@ export default function GoogleTasksTracker() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ListTodo size={18} color="var(--green)" />
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--label-primary)' }}>Google Tasks</h2>
-          {syncing && <Loader2 size={12} className="animate-spin" color="var(--label-tertiary)" style={{ animation: 'spin 1.5s linear infinite' }} />}
+          <button
+            onClick={() => loadData(activeListId)}
+            disabled={loading || syncing}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              color: 'var(--label-secondary)',
+              padding: 2,
+              borderRadius: 4,
+              opacity: loading || syncing ? 0.5 : 1,
+              transition: 'opacity 0.2s',
+            }}
+            title="Sync Tasks"
+          >
+            <RefreshCw 
+              size={14} 
+              className={syncing || loading ? "animate-spin" : ""} 
+              style={{ 
+                animation: syncing || loading ? 'spin 1.5s linear infinite' : 'none',
+                color: 'var(--green)',
+              }} 
+            />
+          </button>
         </div>
         
         {/* Dropdown list selector */}
