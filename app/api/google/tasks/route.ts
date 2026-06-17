@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { listId, title, notes, due } = await req.json();
+    console.log('[Tasks POST] listId:', listId, 'title:', title);
     if (!listId) return NextResponse.json({ error: 'Missing listId' }, { status: 400 });
     if (!title) return NextResponse.json({ error: 'Missing title' }, { status: 400 });
 
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json();
-      console.error('Google Tasks POST failed. Response code:', res.status, 'Error:', err);
+      console.error('[Tasks POST] Google API error:', res.status, err);
       return NextResponse.json(
         { error: err.error?.message || 'Failed to create task' },
         { status: res.status }
@@ -120,15 +121,18 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
+    console.log('[Tasks POST] Created task:', data.id, data.title);
     return NextResponse.json({
       id: data.id,
       title: data.title,
-      status: data.status,
+      status: data.status || 'needsAction',
       due: data.due || null,
       notes: data.notes || '',
       updated: data.updated || '',
+      position: data.position || '',
     });
   } catch (err: any) {
+    console.error('[Tasks POST] Unexpected error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -209,7 +213,6 @@ export async function DELETE(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.json();
-      console.error('Google Tasks DELETE failed. Response code:', res.status, 'Error:', err);
       return NextResponse.json(
         { error: err.error?.message || 'Failed to delete task' },
         { status: res.status }

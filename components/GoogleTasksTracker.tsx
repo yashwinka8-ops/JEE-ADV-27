@@ -26,6 +26,7 @@ interface TaskList {
 export default function GoogleTasksTracker() {
   const { data: session, status: sessionStatus } = useSession();
   const token = (session as any)?.accessToken;
+  const sessionError = (session as any)?.error;
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [lists, setLists] = useState<TaskList[]>([]);
@@ -306,8 +307,8 @@ export default function GoogleTasksTracker() {
     );
   }
 
-  // Not logged in to NextAuth / Google
-  if (!session || !token || error === 'unauthenticated') {
+  // Not logged in to NextAuth / Google, or token refresh failed
+  if (!session || !token || error === 'unauthenticated' || sessionError === 'RefreshAccessTokenError') {
     return (
       <div className="card card-section" style={{ 
         display: 'flex', 
